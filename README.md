@@ -169,6 +169,8 @@ Write notes like you'd brief a developer: "make this the brand orange and 20% sm
 - **[docs/frameworks.md](docs/frameworks.md)**: Vite, Next.js, everything else, and the bookmarklet
 - **[docs/reference.md](docs/reference.md)**: config, commands, the brief, the AFS data model, HTTP and agent APIs, voice, security
 
+**Hosting the landing page:** `site/` is plain static files. On Vercel, import the repo as is: `vercel.json` serves `site/` and nothing else. The Pencil server itself never goes on a host; it refuses to start there.
+
 ## What's in here
 
 ```

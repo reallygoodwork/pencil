@@ -226,3 +226,12 @@ test("MCP mode lists five tools", async () => {
   p.kill();
   assert.deepEqual(list.result.tools.map((t) => t.name), ["pencil_watch", "pencil_resolve", "pencil_reply", "pencil_dismiss", "pencil_get"]);
 });
+
+test("refuses to start on a hosting platform", async () => {
+  const { spawnSync } = require("node:child_process");
+  const r = spawnSync(process.execPath, [path.join(ROOT, "server.js")], {
+    env: { ...process.env, HOME: home, APP_ORIGIN: ORIGIN, TOKEN, VERCEL: "1" }, encoding: "utf8", timeout: 5000,
+  });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /runs on your own Mac/);
+});

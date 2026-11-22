@@ -1,0 +1,10 @@
+# Only the landing page (site/) is deployed. The Pencil server runs on your own Mac, never on a host.
+server.js
+overlay.js
+bin/
+templates/
+scripts/
+test/
+examples/
+vendor/
+docs/

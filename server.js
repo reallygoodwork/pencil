@@ -40,6 +40,12 @@ const AFS_VERSION = "1.1";
 const ARGS = new Set(process.argv.slice(2));
 const MODE = ARGS.has("--mcp") ? "mcp" : ARGS.has("--relay") ? "relay" : "headless";
 const env = process.env;
+// Pencil Agent is a local tool: it edits files on your machine. Refuse to start on a hosting platform,
+// where it would be pointless at best and an open door at worst. (Deploy site/ for the landing page.)
+if (env.VERCEL || env.AWS_LAMBDA_FUNCTION_NAME || env.NETLIFY || env.K_SERVICE) {
+  process.stderr.write("Pencil Agent runs on your own Mac, not on a host. To deploy the landing page, serve site/ as static files.\n");
+  process.exit(1);
+}
 const expand = (p) => p && path.resolve(p.replace(/^~(?=\/|$)/, os.homedir()));
 
 const APP_ORIGIN = env.APP_ORIGIN;
