@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pencil Agent by Really Good Work Inc.: mark up your site on an iPad</title>
+<style>
+@font-face{font-family:'Paper Mono';src:url('media/PaperMono.woff2') format('woff2');font-weight:100 800;font-style:normal;font-display:swap}
+body{margin:0;background:#000}
+.pg{
+  /* two text tones on pure black, both measured: fg Lc 93 (17.1:1), dim Lc 61 */
+  --color-bg-page:#000000; --color-bg-surface:#0D0D0D; --color-border:#595855;
+  --color-text-primary:#E8E8E6; --color-text-dim:#B3B3B0; --color-bg-plate:#1A1A1A; --color-text-plate-dim:#C4C4C1;
+  --color-text-secondary:var(--color-text-primary); --color-text-tertiary:var(--color-text-plate-dim); /* names used inside the diagrams */ --color-ink:#E5484D;
+  --text-body:0.8125rem; --text-small:0.75rem; --text-statement:1.25rem;
+  background:var(--color-bg-page);color:var(--color-text-primary);
+  font-family:'Paper Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:var(--text-body);line-height:1.5;font-weight:400;text-transform:uppercase;letter-spacing:0.02em;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+.pg a{color:inherit;text-decoration:none}
+.pg a:hover{color:var(--color-text-dim)}
+.br::before{content:"[\00a0"} .br::after{content:"\00a0]"}
+.wrap{max-width:64rem;margin:0 auto;padding:0 2rem}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:1.5rem;padding:1.5rem 0}
+.nav{display:flex;gap:1.5rem;flex-wrap:wrap}
+.sec{display:grid;grid-template-columns:12rem 1fr;column-gap:2rem;padding:4.5rem 0 0}
+.lab{min-width:0;color:var(--color-text-primary)}
+.body{min-width:0;max-width:42rem}
+.statement{margin:0;font-size:var(--text-statement);line-height:1.3;font-weight:400;letter-spacing:0.01em;text-wrap:balance;max-width:28ch}
+h2{margin:0;font-size:var(--text-body);line-height:1.5;font-weight:600;letter-spacing:0.04em}
+p{margin:1.25rem 0 0;max-width:56ch;text-wrap:pretty}
+h2 + p{margin-top:0.75rem}
+.rows{margin-top:2rem;display:grid;row-gap:1.75rem}
+.row{display:grid;grid-template-columns:minmax(0,13rem) minmax(0,1fr);column-gap:1.5rem}
+.row .k{min-width:0}
+.row .v{min-width:0;display:flex;flex-direction:column;text-wrap:pretty;overflow-wrap:anywhere}
+ol.steps{list-style:none;margin:2rem 0 0;padding:0;display:grid;row-gap:1.25rem;max-width:56ch}
+ol.steps li{display:grid;grid-template-columns:2.5rem 1fr}
+.plate{margin:2.5rem 0 0;background:var(--color-bg-plate);padding:0 0.5rem 0.5rem}
+.pl-h{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:2.25rem;font-size:var(--text-small);color:var(--color-text-primary)}
+.pl-h .chip{background:var(--color-text-primary);color:var(--color-bg-page);padding:0.1875rem 0.5rem;font-weight:500;white-space:nowrap}
+.pl-h .t{text-align:end;min-width:0}
+.well{background:var(--color-bg-page)}
+.plate .media,.plate .scroll svg{background:var(--color-bg-page)}
+.plate .cap{margin:0;padding:0.625rem 0.25rem 0.125rem;color:var(--color-text-plate-dim)}
+.plate pre.code{margin:0;padding:1rem 1.125rem;background:var(--color-bg-page)}
+.plate .pair{gap:0.5rem}
+.plate .pair img{aspect-ratio:1180 / 820;object-fit:contain}
+.plate .sub{display:block;padding:0.5rem 0.25rem 0;font-size:var(--text-small);color:var(--color-text-plate-dim)}
+.media{display:block;width:100%;height:auto;background:var(--color-bg-surface)}
+figure{margin:2.5rem 0 0}
+.cap{margin-top:0.625rem;font-size:var(--text-small);color:var(--color-text-dim)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.scroll{overflow-x:auto;overscroll-behavior-x:contain}
+.scroll svg{display:block;width:100%;height:auto;background:var(--color-bg-surface)}
+pre.code{margin:2rem 0 0;padding:1.25rem 0;font:inherit;font-size:var(--text-small);line-height:1.8;text-transform:none;letter-spacing:0;white-space:pre;overflow-x:auto;color:var(--color-text-primary)}
+pre.code i{font-style:normal;color:var(--color-text-dim)}
+code{font:inherit;text-transform:none;letter-spacing:0}
+.mark{display:block;margin:7rem 0 0;font-size:clamp(2.5rem,9vw,6.5rem);line-height:0.9;font-weight:700;letter-spacing:-0.04em;text-wrap:balance}
+footer{display:grid;grid-template-columns:12rem 1fr;column-gap:2rem;padding:2rem 0 2.5rem;color:var(--color-text-dim)}
+footer .body{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
+@media (max-width:760px){
+  .wrap{padding:0 1.25rem}
+  .sec,footer{grid-template-columns:1fr;padding-top:3.5rem}
+  .lab{margin-bottom:1.25rem}
+  .row{grid-template-columns:minmax(0,9rem) minmax(0,1fr);column-gap:1rem}
+  .nav .n{display:none}
+  .pair{grid-template-columns:1fr}
+  .plate .pair{row-gap:0.75rem}
+  .scroll svg{min-width:40rem}
+  footer{padding-top:2rem}
+}
+</style>
+</head>
+<body>
+<div class="pg" id="top">
+<div class="wrap">
+<header>
+<a href="#top">Pencil Agent</a>
+<nav class="nav" aria-label="Main"><a class="n br" href="#how">How</a><a class="n br" href="#marks">Marks</a><a class="n br" href="#server">Server</a><a class="n br" href="#security">Security</a><a class="n br" href="#about">Studio</a><a class="br" href="https://github.com/reallygoodwork/pencil">Code</a></nav>
+</header>
+<section class="sec" id="intro">
+<div class="lab">Pencil Agent<br>A Really Good Work Inc. project</div>
+<div class="body">
+<h1 class="statement">Mark up your site on an iPad. A coding agent makes the change.</h1>
+<p>Draw on the live page, say what should change, and Claude Code edits the code on your Mac. You keep reviewing.</p>
+</div>
+</section>
+<section class="sec" id="problem">
+<div class="lab">01 The problem</div>
+<div class="body">
+<h2>Small fixes still need a laptop.</h2>
+<p>You spot most problems on the real thing, often on a phone or iPad. The fix is usually small: a colour, a word, some spacing. But making it means opening the laptop, finding the file and switching context. So the fix waits, or gets lost.</p>
+</div>
+</section>
+<section class="sec" id="how">
+<div class="lab">02 How it works</div>
+<div class="body">
+<h2>Draw it, say it, it changes.</h2>
+<ol class="steps"><li><span>01</span><span>Circle what you want changed. Apple Pencil on an iPad, or a finger on a phone.</span></li><li><span>02</span><span>Say or type the change. “Make this our brand orange.”</span></li><li><span>03</span><span>Your Mac gets the note, with the element, its text and its source file.</span></li><li><span>04</span><span>Claude Code edits the file. The page reloads and the note turns green.</span></li></ol>
+<figure class="plate"><div class="pl-h"><span class="chip">Fig. 01</span><span class="t">Demo · iPad</span></div><video class="media" src="media/ipad.mp4" poster="media/ipad-poster.jpg" autoplay muted loop playsinline aria-label="Screen recording on an iPad: the headline is circled, the note asks for it shorter and punchier, Claude works on it, and the headline changes to Keep up."></video><figcaption class="cap">The demo site. Circle the headline, ask for it shorter, it updates.</figcaption></figure>
+</div>
+</section>
+<section class="sec" id="experience">
+<div class="lab">03 The experience</div>
+<div class="body">
+<h2>Built to stay out of the way.</h2>
+<p>You’re reviewing, not operating a tool. Nothing asks you to stop.</p>
+<div class="rows"><div class="row"><div class="k">Pencil draws</div><div class="v"><span>Fingers keep scrolling and tapping. On a phone, turn the pen on and use a finger.</span></div></div><div class="row"><div class="k">Pause to finish</div><div class="v"><span>Draw as many strokes as you need. Stop for under a second and the note opens.</span></div></div><div class="row"><div class="k">One pill</div><div class="v"><span>Type, talk or just send the sketch. A line above it says how it read your marks.</span></div></div><div class="row"><div class="k">Status</div><div class="v"><span>Amber waiting</span><span>Blue working</span><span>Purple question</span><span>Green done</span></div></div><div class="row"><div class="k">Keep moving</div><div class="v"><span>Mark the next thing while Claude works on the last one.</span></div></div><div class="row"><div class="k">Tidy up</div><div class="v"><span>A tray lists every note. Close, reopen, or delete with five seconds to undo.</span></div></div></div>
+<h2 style="margin-top:3.5rem">Voice, without paying for it.</h2>
+<p>Most voice features send your audio to a paid cloud service. This uses what’s already on your devices.</p>
+<div class="rows"><div class="row"><div class="k">Keyboard mic</div><div class="v"><span>The dictation key on the iPad keyboard. Built in, free, no setup.</span></div></div><div class="row"><div class="k">Whisper</div><div class="v"><span>whisper.cpp, an open-source speech model, runs on your Mac. Free, offline, the audio stays home.</span></div></div><div class="row"><div class="k">Web Audio</div><div class="v"><span>The browser’s own audio tools drive the visual that moves with your voice.</span></div></div></div>
+</div>
+</section>
+<section class="sec" id="finding">
+<div class="lab">04 Finding the element</div>
+<div class="body">
+<h2>How it knows what you circled.</h2>
+<p>A page is a tree of boxes and the browser knows where each one sits. So the overlay doesn’t look at pixels. It asks the browser.</p>
+<ol class="steps"><li><span>01</span><span>Ask what’s under the middle of the circle. Usually a word inside a button.</span></li><li><span>02</span><span>Step out to the parent while the circle still covers 70% of it. The word becomes the button.</span></li><li><span>03</span><span>Stop when it doesn’t fit. The section is too big, so the button is the answer.</span></li></ol>
+<figure class="plate"><div class="pl-h"><span class="chip">Fig. 02</span><span class="t">Finding the element</span></div><div class="scroll"><svg viewBox="0 0 640 220" role="img" aria-label="A section box containing a button. The words inside the button are found first, then the button, which the circle covers, then the section, which it doesn't." style="display: block; width: 100%; height: auto; background: var(--color-bg-surface)">
+<g font-family="Paper Mono, ui-monospace, monospace" font-size="12">
+<rect x="20" y="20" width="600" height="180" fill="none" stroke="var(--color-border)"/>
+<text x="34" y="42" fill="var(--color-text-tertiary)">section</text>
+<rect x="70" y="86" width="190" height="52" rx="26" fill="none" stroke="var(--color-text-secondary)"/>
+<rect x="100" y="101" width="130" height="22" fill="none" stroke="var(--color-text-tertiary)" stroke-dasharray="3 3"/>
+<text x="165" y="116" fill="var(--color-text-primary)" text-anchor="middle">Shop notebooks</text>
+<ellipse cx="165" cy="112" rx="125" ry="46" fill="none" stroke="#E5484D" stroke-width="2.5" transform="rotate(-3 165 112)"/>
+<circle cx="165" cy="131" r="3" fill="#E5484D"/>
+<text x="320" y="78" fill="var(--color-text-tertiary)">1</text><text x="344" y="78" fill="var(--color-text-secondary)">the words: start here</text>
+<text x="320" y="116" fill="var(--color-text-tertiary)">2</text><text x="344" y="116" fill="var(--color-text-primary)">the button: circle covers it</text>
+<text x="320" y="154" fill="var(--color-text-tertiary)">3</text><text x="344" y="154" fill="var(--color-text-secondary)">the section: too big, stop</text>
+</g>
+</svg></div><figcaption class="cap">Circle a button, get the button. Circle a card, get the card.</figcaption></figure>
+<p>Then it collects what a developer would want: tag, classes, text, neighbours, a few styles and, in React, the component and source file.</p>
+</div>
+</section>
+<section class="sec" id="marks">
+<div class="lab">05 Reading the marks</div>
+<div class="body">
+<h2>How it tells an arrow from a circle.</h2>
+<p>Everyone draws differently, so it doesn’t recognise pictures. It measures each stroke with loose rules that hold up in anyone’s hand.</p>
+<figure class="plate"><div class="pl-h"><span class="chip">Fig. 03</span><span class="t">Three rules</span></div><div class="scroll"><svg viewBox="0 0 640 200" role="img" aria-label="Three rules. A loop whose ends meet is a circle. A stroke whose points hug its bounding box is a box. A stroke that doubles back from its farthest point is an arrow." style="display: block; width: 100%; height: auto; background: var(--color-bg-surface)">
+<g font-family="Paper Mono, ui-monospace, monospace" font-size="12" fill="none">
+<path d="M118 52 C 168 46, 182 92, 160 120 C 140 146, 82 142, 66 112 C 52 84, 76 50, 112 54" stroke="#E5484D" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="118" cy="52" r="3.5" fill="var(--color-text-primary)"/><circle cx="112" cy="54" r="3.5" fill="var(--color-text-primary)"/>
+<text x="40" y="172" fill="var(--color-text-primary)" stroke="none">Ends meet</text>
+<text x="40" y="188" fill="var(--color-text-tertiary)" stroke="none">→ a loop: circle</text>
+<rect x="250" y="52" width="110" height="84" stroke="var(--color-border)" stroke-dasharray="3 3"/>
+<path d="M254 56 L 356 58 L 354 132 L 256 130 L 255 60" stroke="#E5484D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="236" y="172" fill="var(--color-text-primary)" stroke="none">Hugs its edges</text>
+<text x="236" y="188" fill="var(--color-text-tertiary)" stroke="none">→ a box: add here</text>
+<path d="M440 110 L 586 86 L 566 70 M 586 86 L 570 106" stroke="#E5484D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="440" cy="110" r="3.5" fill="var(--color-text-tertiary)"/><circle cx="586" cy="86" r="3.5" fill="var(--color-text-primary)"/>
+<text x="424" y="172" fill="var(--color-text-primary)" stroke="none">Turns back at the tip</text>
+<text x="424" y="188" fill="var(--color-text-tertiary)" stroke="none">→ an arrow: move it</text>
+</g>
+</svg></div><figcaption class="cap">Measured, not recognised. Works in anyone’s hand.</figcaption></figure>
+<div class="rows"><div class="row"><div class="k">Circle</div><div class="v"><span>The ends meet and the path is long. A loop.</span></div></div><div class="row"><div class="k">Box</div><div class="v"><span>A loop whose points hug its edges.</span></div></div><div class="row"><div class="k">Arrow</div><div class="v"><span>The point farthest from the start is the tip. The pen turns back from it to draw the head.</span></div></div><div class="row"><div class="k">X</div><div class="v"><span>Two lines of similar size crossing near their middles.</span></div></div><div class="row"><div class="k">Strike / underline</div><div class="v"><span>A flat line through something strikes it. Just below, it underlines it.</span></div></div><div class="row"><div class="k">Handwriting</div><div class="v"><span>A scribble inside a box is its label.</span></div></div></div>
+<p>Then the shape becomes an instruction. An arrow moves whatever sits at its tail to where the tip points, a whole card rather than its heading. A box in empty space adds something between the two elements it sits between.</p>
+<p>It shows its reading before you send, like “Add after Link ‘See the paper’”. For anything beyond a circle, the agent also gets a picture: the page as outlines with your ink on top.</p>
+<figure class="plate"><div class="pl-h"><span class="chip">Fig. 04</span><span class="t">Sketch in, picture out</span></div><div class="pair"><div><img class="media" src="media/sketch-compose.jpg" alt="The demo page with a box sketched next to the two buttons, a scribble inside it, and an arrow from the third card to the first. The dark note pill below reads: Add after Link “See the paper”, with the note Add a Gift cards button, and lead with the fountain pen card."><span class="sub">A · What you draw</span></div><div><img class="media" src="media/sketch-seen.png" alt="The same area redrawn as grey outlines with labels, with the box, scribble and arrow on top."><span class="sub">B · What the agent receives</span></div></div></figure>
+</div>
+</section>
+<section class="sec" id="server">
+<div class="lab">06 The local server</div>
+<div class="body">
+<h2>The middle step, on your own Mac.</h2>
+<p>One Node file, nothing to install beyond Node. It sits between the iPad and Claude Code.</p>
+<div class="rows"><div class="row"><div class="k">Serves</div><div class="v"><span>The drawing script your page loads. Nothing to install in your app.</span></div></div><div class="row"><div class="k">Checks</div><div class="v"><span>Right token, right app, sensible size. Everything else is refused.</span></div></div><div class="row"><div class="k">Holds</div><div class="v"><span>Notes in memory, numbered per page. Restart and they’re gone.</span></div></div><div class="row"><div class="k">Streams</div><div class="v"><span>Each status change back to the page. No reloads.</span></div></div><div class="row"><div class="k">Runs</div><div class="v"><span>Claude Code in your project, up to five notes at a time, two seconds after the last one.</span></div></div><div class="row"><div class="k">Reports</div><div class="v"><span>Claude’s one line per note becomes the reply.</span></div></div></div>
+<figure class="plate"><div class="pl-h"><span class="chip">Code 01</span><span class="t">One note’s brief · plain text</span></div><pre class="code">[ann_c6j7hqC0Cmk] fix: Make this our brand orange
+page: /
+element: a.btn.btn-primary "Shop notebooks"
+source: src/components/PrimaryButton.tsx:12
+classes: btn btn-primary</pre></figure>
+<p>That’s the whole brief for one note: about 60&nbsp;tokens. Notes, sketches and voice stay on your Mac. Claude Code works in your project the same way it does at your desk, with your own login. Nothing runs until you send.</p>
+</div>
+</section>
+<section class="sec" id="security">
+<div class="lab">07 Security</div>
+<div class="body">
+<h2>Who gets to tell your computer to change code?</h2>
+<p>This lets a web page ask an agent to edit files on your Mac. Anyone who can reach the server could do the same. So only you can reach it, and the agent is limited even then.</p>
+<div class="rows"><div class="row"><div class="k">Mac only</div><div class="v"><span>The server listens on 127.0.0.1. Other machines can’t connect. Tailscale hands requests in from inside the Mac.</span></div></div><div class="row"><div class="k">Private network</div><div class="v"><span>Your iPad reaches the Mac over Tailscale. Only your signed-in devices can join.</span></div></div><div class="row"><div class="k">Token</div><div class="v"><span>A long random key in a file only you can read. Every request carries it.</span></div></div><div class="row"><div class="k">Your app only</div><div class="v"><span>The server answers your app’s address and refuses every other site.</span></div></div><div class="row"><div class="k">Limited agent</div><div class="v"><span>Read, find, search, edit and write files. No terminal. No internet.</span></div></div></div>
+<h2 style="margin-top:3.5rem">Why Tailscale.</h2>
+<p>Your iPad needs to reach your Mac. Opening a port to the internet invites the world. Home Wi-Fi only works at home, and anyone on it can reach the port. Tailscale is a private network between your own devices: install it on both, sign in once, and they connect, encrypted, from any network. It also gives the Mac a real HTTPS certificate, which Safari needs before a page can use the mic. The free plan covers it.</p>
+<p>Without it: on a trusted Wi-Fi, run with <code>HOST=0.0.0.0</code> and your Mac’s local IP. Plain HTTP, no mic button, home only. Not on café or office networks.</p>
+</div>
+</section>
+<section class="sec" id="try">
+<div class="lab">08 Try it</div>
+<div class="body">
+<h2>Run the demo.</h2>
+<figure class="plate"><div class="pl-h"><span class="chip">Code 02</span><span class="t">Terminal</span></div><pre class="code">git clone https://github.com/reallygoodwork/pencil
+cd pencil
+npm run demo   <i># open localhost:5173, tap the pen</i></pre></figure>
+<p>A Mac with Node 20 and Claude Code. The demo edits a copy of a sample site. The README covers your own project. <a class="br" href="https://github.com/reallygoodwork/pencil">Get the code</a></p>
+</div>
+</section>
+<section class="sec" id="about">
+<div class="lab">09 Studio</div>
+<div class="body">
+<p class="statement" style="margin:0">Made by Really Good Work Inc.</p>
+<div class="rows"><div class="row"><div class="k">Website</div><div class="v"><span><a class="br" href="https://reallygood.work">reallygood.work</a></span></div></div><div class="row"><div class="k">X</div><div class="v"><span><a class="br" href="https://x.com/reallygoodwork">@reallygoodwork</a></span></div></div><div class="row"><div class="k">Code</div><div class="v"><span><a class="br" href="https://github.com/reallygoodwork/pencil">github.com/reallygoodwork/pencil</a></span></div></div></div>
+<a class="mark" href="https://reallygood.work">Really Good Work Inc.</a>
+</div>
+</section>
+<footer><div>© 2026 Really Good Work Inc.</div><div class="body"><span>Pencil Agent</span><span>Set in Paper Mono</span></div></footer>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+{
+  "name": "pencil-agent",
+  "version": "0.7.0",
+  "description": "Circle UI on your phone or iPad, describe the change, and Claude Code edits your app. AFS v1.1 annotations.",
+  "bin": {
+    "pencil-agent": "server.js"
+  },
+  "files": [
+    "server.js",
+    "overlay.js",
+    "vendor/",
+    "docs/",
+    "pencil.env.example",
+    "bin/",
+    "templates/"
+  ],
+  "engines": {
+    "node": ">=20.6"
+  },
+  "scripts": {
+    "start": "node --env-file=pencil.env server.js",
+    "tag": "node --env-file=pencil.env server.js --print-tag",
+    "bookmarklet": "node --env-file=pencil.env server.js --print-bookmarklet",
+    "demo": "node scripts/demo.js",
+    "test": "node --test test/*.test.js",
+    "site": "cd site && python3 -m http.server 8080",
+    "relay": "node --env-file=pencil.env server.js --relay",
+    "install-relay": "node -e \"const fs=require('fs'),os=require('os'),p=require('path');const dir=p.join(os.homedir(),'.claude','commands');fs.mkdirSync(dir,{recursive:true});const out=p.join(dir,'pencil-relay.md');fs.writeFileSync(out,fs.readFileSync('templates/pencil-relay.md','utf8').replaceAll('{{PENCIL}}',p.resolve('bin/pencil.js')));console.log('Installed /pencil-relay at '+out)\""
+  },
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reallygoodwork/pencil.git"
+  },
+  "homepage": "https://github.com/reallygoodwork/pencil",
+  "bugs": {
+    "url": "https://github.com/reallygoodwork/pencil/issues"
+  },
+  "author": "Really Good Work Inc. (https://reallygood.work)"
+}
