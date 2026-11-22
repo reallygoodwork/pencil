@@ -18,6 +18,7 @@
 //
 // Env:
 //   APP_ORIGIN     (required) exact origin of your app as the device sees it, e.g. https://mac.tailnet.ts.net
+//                  Several are allowed, comma-separated, e.g. http://mac.local:5173,http://192.168.1.20:5173
 //   PUBLIC_URL     how the device reaches this server, e.g. https://mac.tailnet.ts.net:8443 (for the tag)
 //   HOST           interface to bind (default 127.0.0.1 — put Tailscale Serve in front)
 //   PORT           default 4545
@@ -48,7 +49,8 @@ if (env.VERCEL || env.AWS_LAMBDA_FUNCTION_NAME || env.NETLIFY || env.K_SERVICE) 
 }
 const expand = (p) => p && path.resolve(p.replace(/^~(?=\/|$)/, os.homedir()));
 
-const APP_ORIGIN = env.APP_ORIGIN;
+const APP_ORIGINS = (env.APP_ORIGIN || "").split(",").map((o) => o.trim().replace(/\/$/, "")).filter(Boolean);
+const APP_ORIGIN = APP_ORIGINS[0];
 const HOST = env.HOST || "127.0.0.1";
 const PORT = Number(env.PORT || 4545);
 const PUBLIC_URL = (env.PUBLIC_URL || `http://${HOST === "0.0.0.0" ? "<your-mac-ip>" : HOST}:${PORT}`).replace(/\/$/, "");
@@ -73,7 +75,7 @@ const ROOT = __dirname;
 // Blocks DNS rebinding, where a website points its own hostname at 127.0.0.1 and talks to us through your browser.
 const hostname = (u) => { try { return new URL(u).hostname.toLowerCase(); } catch { return ""; } };
 const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
-const ALLOWED_HOSTS = new Set([...LOOPBACK, hostname(PUBLIC_URL), hostname(APP_ORIGIN),
+const ALLOWED_HOSTS = new Set([...LOOPBACK, hostname(PUBLIC_URL), ...APP_ORIGINS.map(hostname),
   ...(env.ALLOWED_HOSTS || "").split(",").map((h) => h.trim().toLowerCase()).filter(Boolean)].filter(Boolean));
 const hostOf = (req) => String(req.headers.host || "").toLowerCase().replace(/:\d+$/, "");
 // Relay sessions (Claude Code sessions that claim notes): id → last seen. A note claimed by a session goes back
@@ -93,7 +95,7 @@ if (ARGS.has("--print-bookmarklet")) {
   process.stdout.write(`javascript:(()=>{const s=document.createElement("script");s.src=${JSON.stringify(PUBLIC_URL + "/overlay.js")};s.dataset.token=${JSON.stringify(TOKEN)};document.body.appendChild(s)})()\n`);
   process.exit(0);
 }
-if (!APP_ORIGIN || !/^https?:\/\/[^/]+$/.test(APP_ORIGIN)) die("Set APP_ORIGIN to your app's exact origin, e.g. https://mac.tailnet.ts.net");
+if (!APP_ORIGINS.length || !APP_ORIGINS.every((o) => /^https?:\/\/[^/]+$/.test(o))) die("Set APP_ORIGIN to your app's exact origin, e.g. https://mac.tailnet.ts.net (several allowed, comma-separated)");
 if (MODE === "headless" && !fs.existsSync(PROJECT_DIR)) die(`PROJECT_DIR not found: ${PROJECT_DIR}`);
 
 // ---------------------------------------------------------------------------
@@ -331,9 +333,9 @@ async function body(req) {
 
 const server = http.createServer(async (req, res) => {
   const origin = req.headers.origin;
-  const corsOk = origin === APP_ORIGIN;
+  const corsOk = APP_ORIGINS.includes(origin);
   if (corsOk) {
-    res.setHeader("Access-Control-Allow-Origin", APP_ORIGIN);
+    res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Last-Event-ID");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
     res.setHeader("Access-Control-Max-Age", "600");
@@ -666,7 +668,7 @@ server.on("error", (e) => {
 });
 server.listen(PORT, HOST, () => {
   httpUp = true;
-  log(`v${VERSION} (AFS ${AFS_VERSION}) ${MODE} mode on http://${HOST}:${PORT}  ·  app ${APP_ORIGIN}${MODE === "headless" ? `  ·  project ${PROJECT_DIR}` : ""}  ·  voice ${WHISPER_MODEL ? "on" : "off"}`);
+  log(`v${VERSION} (AFS ${AFS_VERSION}) ${MODE} mode on http://${HOST}:${PORT}  ·  app ${APP_ORIGINS.join(", ")}${MODE === "headless" ? `  ·  project ${PROJECT_DIR}` : ""}  ·  voice ${WHISPER_MODEL ? "on" : "off"}`);
   if (MODE === "relay") log(`Relay mode: no agent runs here. In a Claude Code session in your project, run /pencil-relay (or: node ${path.join(ROOT, "bin/pencil.js")} wait).`);
   if (MODE === "headless") {
     // The token is never printed at startup, so screen shares, recordings and pasted logs can't leak it.

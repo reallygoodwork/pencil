@@ -11,6 +11,7 @@ Circle UI on a phone or iPad (Apple Pencil or finger), leave a note, and Claude 
 | `bin/pencil.js` | Relay client for a Claude Code session: `wait` (long poll, zero tokens while idle), `resolve`, `reply`, `dismiss`, `get` |
 | `templates/pencil-relay.md` | The `/pencil-relay` command, installed with `npm run install-relay` |
 | `vendor/perfect-freehand.mjs` | Vendored stroke library (MIT). Don't edit. |
+| `vendor/qrcode-generator.js` | Vendored QR encoder (MIT), used only by `scripts/demo.js --lan`. Don't edit. |
 | `docs/` | User docs: `tailscale.md`, `frameworks.md`, `reference.md`. `docs/product/` holds the hosted-product plan. |
 | `examples/demo-app/` | Fictional "Fieldnote" site used for demos and recordings |
 | `scripts/demo.js` | `npm run demo`: serves a scratch copy of the demo app with the overlay injected, and starts the server |
@@ -35,7 +36,7 @@ npm run relay             # listen only; a Claude Code session claims notes via 
 - **Security model** (see `docs/reference.md#security`):
   - The server binds `127.0.0.1` by default.
   - Every request must name an allowed `Host` (loopback, the `PUBLIC_URL`/`APP_ORIGIN` hosts, `ALLOWED_HOSTS`), or it gets `421`. This blocks DNS rebinding.
-  - Every non-public route checks the token (constant-time) **and** the exact `APP_ORIGIN`. Public routes are only `/health`, `/overlay.js` and `/vendor/*`.
+  - Every non-public route checks the token (constant-time) **and** an exact `APP_ORIGIN` (comma-separated list allowed). Public routes are only `/health`, `/overlay.js` and `/vendor/*`.
   - `/agent/*` (relay) only answers the Mac itself: no `Origin`, a loopback `Host`, no `X-Forwarded-For`/`Forwarded`/`Tailscale-User-Login`, plus the token.
   - The server never prints the token at startup. Only `npm run tag` and `npm run bookmarklet` do, on request.
   - The token goes in a header, never in a URL. The overlay streams SSE with `fetch`, not `EventSource`, for this reason.

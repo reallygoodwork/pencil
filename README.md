@@ -34,12 +34,13 @@ No Tailscale, no config. On a Mac with Node and [Claude Code](https://claude.com
 
 ```bash
 git clone https://github.com/reallygoodwork/pencil && cd pencil
-npm run demo              # or: npm run demo -- --fake   (scripted agent, no tokens)
+npm run demo              # real Claude Code edits a scratch copy
+npm run demo -- --fake    # scripted agent, no tokens: knows two notes only (it prints them)
 ```
 
 Open http://localhost:5173, tap the pen, circle something, and send a note. The demo edits a scratch copy of a sample site, never your files.
 
-**On your phone or iPad:** add `--lan` (same Wi-Fi, plain HTTP) or `--tailscale` (HTTPS, mic button works) and open the address it prints.
+**On your phone or iPad:** add `--lan` (same Wi-Fi, plain HTTP) and scan the QR code it prints, or type the short `your-mac.local` address. `--tailscale` gives HTTPS, so the mic button works. Add it to your Home Screen and next time it's one tap.
 
 ## Sketch it, don't spell it
 
@@ -64,7 +65,7 @@ It doesn't try to recognise drawings. It measures each stroke: do the ends meet,
 
 ## What it's like to use
 
-- **Pencil draws, fingers scroll.** On an iPad your hand never fights the tool. On a phone, turn the pen on and use a finger.
+- **Pencil draws, fingers scroll.** On an iPad your hand never fights the tool. On a phone, turn the pen on, draw with one finger and scroll with two. The pen turns itself off after you send, and **Clear** wipes a stray mark.
 - **Pause to finish.** Draw as many marks as you like. Stop for under a second and a small pill opens: type, talk, or just send the sketch.
 - **Keep moving.** A numbered marker sits on what you marked: amber waiting, blue working, purple a question for you, green done. Mark the next thing while Claude works on the last one.
 - **Circle, wait, check, done.** When it's finished, the marker turns to a green check with Claude's one-line answer. Tap it to drag between before and after.

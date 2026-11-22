@@ -111,9 +111,11 @@ This works for a quick test, with limits:
 2. In `pencil.env`:
    ```bash
    HOST=0.0.0.0
-   APP_ORIGIN=http://192.168.1.20:5173     # your Mac's Wi-Fi IP and dev port
+   APP_ORIGIN=http://192.168.1.20:5173,http://your-mac.local:5173   # Wi-Fi IP and/or Bonjour name, dev port
    PUBLIC_URL=http://192.168.1.20:4545
    ```
-3. Open `http://192.168.1.20:5173` on the device.
+3. Open `http://192.168.1.20:5173` on the device, or `http://your-mac.local:5173`. The `.local` name is in System Settings → General → Sharing → Local hostname, and it doesn't change when your IP does.
+
+`npm run demo -- --lan` does all of this for the demo app and prints a QR code to scan.
 
 The limits: it's plain HTTP, there's no hold-to-talk button (keyboard dictation still works), and anyone on the same Wi-Fi can reach the port, though they still need the token. Don't use this on networks you don't trust.

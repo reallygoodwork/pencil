@@ -15,7 +15,7 @@ Set these in `pencil.env` (loaded with `node --env-file=pencil.env`) or as envir
 
 | Variable | Default | |
 |---|---|---|
-| `APP_ORIGIN` | **required** | Your app's origin as the device sees it, e.g. `https://your-mac.tailnet.ts.net` |
+| `APP_ORIGIN` | **required** | Your app's origin as the device sees it, e.g. `https://your-mac.tailnet.ts.net`. Several are allowed, comma-separated (e.g. a Wi-Fi IP and a `.local` name). |
 | `PUBLIC_URL` | `http://HOST:PORT` | Pencil Agent's address as the device sees it. Used for the tag and bookmarklet. |
 | `PROJECT_DIR` | current directory | The repo Claude may edit |
 | `CLAUDE_MODEL` | Claude Code's default | e.g. `haiku` or `sonnet` |
@@ -99,7 +99,7 @@ Sessions are one per page URL, ignoring the `#hash`. Storage is in memory: resta
 
 ## HTTP API
 
-Every request must carry an allowed `Host` (loopback, the `PUBLIC_URL` or `APP_ORIGIN` host, or `ALLOWED_HOSTS`), or it gets `421`. All routes except `/health`, `/overlay.js` and `/vendor/*` need `Authorization: Bearer <token>` and an `Origin` equal to `APP_ORIGIN`. Route shapes follow [agentation.com/api](https://agentation.com/api).
+Every request must carry an allowed `Host` (loopback, the `PUBLIC_URL` or `APP_ORIGIN` host, or `ALLOWED_HOSTS`), or it gets `421`. All routes except `/health`, `/overlay.js` and `/vendor/*` need `Authorization: Bearer <token>` and an `Origin` equal to one of the `APP_ORIGIN` values. Route shapes follow [agentation.com/api](https://agentation.com/api).
 
 | Method | Path | |
 |---|---|---|
@@ -151,7 +151,7 @@ Add `WHISPER_MODEL=/Users/you/models/ggml-base.en.bin` to `pencil.env` and resta
 |---|---|
 | Network | Binds to `127.0.0.1`. Devices reach it only through Tailscale Serve, which is private to your tailnet. |
 | Token | A random 192-bit token, stored in `~/.pencil-agent/token` (0600) and checked in constant time on every API call and event stream. The overlay sends it in a header, never in a URL. |
-| Origin | Only `APP_ORIGIN` passes CORS and the server-side origin check. |
+| Origin | Only the exact `APP_ORIGIN` values pass CORS and the server-side origin check. |
 | Host | Every request must name an allowed host. This blocks DNS rebinding, where a website points its own hostname at `127.0.0.1` and talks to the server through your browser. |
 | Agent API | The relay's claim and answer routes only answer requests made on the Mac itself, never from a page or through Tailscale, and still need the token. |
 | Input | Annotations are rebuilt field by field: types checked, enums validated, strings capped. Bodies are capped at 900 KB to fit one sketch image and one HTML snapshot (64 KB) (audio at 10 MB). The browser can't mark items resolved or post as the agent. |

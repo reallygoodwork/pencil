@@ -11,7 +11,7 @@ elif echo "$PROMPT" | grep -qi "shorter\|punchier"; then
   sed -i.bak 's/Paper that keeps up with you./Keep up./' index.html 2>/dev/null && rm -f index.html.bak
   SUMMARY='Shortened the headline to "Keep up."'
 else
-  SUMMARY="Done."
+  SUMMARY="Fake agent: nothing changed. It only knows two demo notes: circle the headline and say \"shorter\", or circle Shop notebooks and say \"orange\". Run the demo without --fake for real edits."
 fi
 echo "Looked through the project."
 echo "$PROMPT" | grep -o '^\[ann_[A-Za-z0-9_-]*\]' | tr -d '[]' | while read -r id; do echo "$id: $SUMMARY"; done

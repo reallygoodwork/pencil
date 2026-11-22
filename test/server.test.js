@@ -235,3 +235,21 @@ test("refuses to start on a hosting platform", async () => {
   assert.equal(r.status, 1);
   assert.match(r.stderr, /runs on your own Mac/);
 });
+
+test("several app origins: each is allowed, anything else is not", async () => {
+  const port = PORT + 3;
+  const p = spawn(process.execPath, [path.join(ROOT, "server.js"), "--relay"], {
+    env: { ...process.env, HOME: home, PORT: String(port), TOKEN, APP_ORIGIN: "http://mac.local:5173, http://192.168.1.20:5173" },
+    stdio: ["ignore", "ignore", "ignore"],
+  });
+  try {
+    await waitFor(() => fetch(`http://127.0.0.1:${port}/health`).then((r) => r.ok, () => false));
+    for (const o of ["http://mac.local:5173", "http://192.168.1.20:5173"]) {
+      const r = await fetch(`http://127.0.0.1:${port}/config`, { headers: { Origin: o, Authorization: `Bearer ${TOKEN}` } });
+      assert.equal(r.status, 200, o);
+      assert.equal(r.headers.get("access-control-allow-origin"), o);
+    }
+    assert.equal((await fetch(`http://127.0.0.1:${port}/config`, { headers: { Origin: "http://evil.test", Authorization: `Bearer ${TOKEN}` } })).status, 403);
+    assert.equal((await raw(port, "/health", { headers: { Host: "mac.local:4545" } })).status, 200, "each origin's host is allowed");
+  } finally { p.kill(); }
+});

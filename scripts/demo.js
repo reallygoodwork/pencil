@@ -5,7 +5,8 @@
 // Open http://localhost:5173 in a desktop browser, tap ✎, circle, send.
 //
 // On your phone or iPad:
-//   npm run demo -- --fake --lan                 → same Wi-Fi, plain HTTP (no mic button; keyboard dictation works)
+//   npm run demo -- --fake --lan                 → same Wi-Fi, plain HTTP (no mic button; keyboard dictation works).
+//                                                  Prints a QR code and a short <mac-name>.local address.
 //   npm run demo -- --fake --tailscale           → over Tailscale with HTTPS (the mic button works); prints the
 //                                                  two `tailscale serve` commands to run first
 
@@ -40,10 +41,25 @@ function tailscaleName() {
   return null;
 }
 let appOrigin = `http://localhost:${APP_PORT}`, publicUrl = `http://localhost:${PENCIL_PORT}`, bind = "127.0.0.1", hostEnv = {};
+// The Mac's Bonjour name (what System Settings → General → Sharing shows as "Local hostname").
+function localName() {
+  try {
+    if (process.platform === "darwin") {
+      const n = require("child_process").execFileSync("scutil", ["--get", "LocalHostName"], { encoding: "utf8", timeout: 3000 }).trim();
+      if (n) return `${n}.local`.toLowerCase();
+    }
+  } catch {}
+  const h = os.hostname().split(".")[0];
+  return /^[a-z0-9-]+$/i.test(h) ? `${h}.local`.toLowerCase() : null;
+}
+let ip = null, local = null;
 if (LAN) {
-  const ip = lanIp();
+  ip = lanIp();
   if (!ip) { console.error("Couldn't find this Mac's Wi-Fi address. Are you on Wi-Fi?"); process.exit(1); }
-  appOrigin = `http://${ip}:${APP_PORT}`; publicUrl = `http://${ip}:${PENCIL_PORT}`; bind = "0.0.0.0"; hostEnv = { HOST: "0.0.0.0" };
+  local = localName();
+  // The overlay loads from the address the page was opened on, so allow both.
+  const origins = [`http://${ip}:${APP_PORT}`, ...(local ? [`http://${local}:${APP_PORT}`] : [])];
+  appOrigin = origins.join(","); publicUrl = `http://${ip}:${PENCIL_PORT}`; bind = "0.0.0.0"; hostEnv = { HOST: "0.0.0.0" };
 } else if (TS) {
   const name = tailscaleName();
   if (!name) { console.error("Couldn't read your Tailscale name. Is Tailscale running, with the CLI installed? See docs/tailscale.md."); process.exit(1); }
@@ -74,7 +90,9 @@ http.createServer((req, res) => {
   if (!file.startsWith(work) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end(); }
   let body = fs.readFileSync(file);
   if (rel === "index.html") {
-    const tag = `<script src="${publicUrl}/overlay.js" data-token="${token()}" data-reload="true" defer></script>`;
+    let src = publicUrl;
+    if (LAN) { const h = String(req.headers.host || "").split(":")[0]; if (h === ip || h === local) src = `http://${h}:${PENCIL_PORT}`; }
+    const tag = `<script src="${src}/overlay.js" data-token="${token()}" data-reload="true" defer></script>`;
     body = body.toString().replace("</body>", `${tag}\n</body>`);
   }
   res.writeHead(200, { "Content-Type": types[path.extname(file)] || "application/octet-stream", "Cache-Control": "no-store" });
@@ -88,12 +106,37 @@ http.createServer((req, res) => {
     console.log(`Then on your phone (Tailscale on):  ${appOrigin}   (${who})`);
     console.log(`When you're done:  tailscale serve reset\n`);
   } else if (LAN) {
-    console.log(`\nOn your phone (same Wi-Fi):  ${appOrigin}   (${who})`);
-    console.log(`Plain HTTP on your local network: fine for a demo at home, not on café or office Wi-Fi.\n`);
+    const url = `http://${ip}:${APP_PORT}`;
+    console.log(`\nOn your phone (same Wi-Fi), point the camera at this:\n`);
+    console.log(qr(url));
+    console.log(`  ${url}${local ? `\n  or type  http://${local}:${APP_PORT}` : ""}   (${who})`);
+    console.log(`  Tip: Share → Add to Home Screen, and next time it's one tap.`);
+    console.log(`  Plain HTTP on your local network: fine at home, not on café or office Wi-Fi.\n`);
   } else {
     console.log(`\nDemo app:  http://localhost:${APP_PORT}   (${who} editing ${work})\n`);
   }
 });
+
+if (FAKE) {
+  console.log("Fake agent: it doesn't read your note. It only makes two scripted edits:");
+  console.log('  circle the headline, say "shorter and punchier"');
+  console.log('  circle "Shop notebooks", say "make it the brand orange"');
+  console.log("Anything else comes back unchanged. Drop --fake to have real Claude Code edit it.\n");
+}
+
+// A terminal QR code (two rows per line with half blocks). Dev-only: vendor/qrcode-generator.js, MIT.
+function qr(text) {
+  const q = require(path.join(ROOT, "vendor/qrcode-generator.js"))(0, "M");
+  q.addData(text); q.make();
+  const n = q.getModuleCount(), on = (r, c) => r >= 0 && c >= 0 && r < n && c < n && q.isDark(r, c);
+  let out = "";
+  for (let r = -2; r < n + 2; r += 2) {
+    let line = "  ";
+    for (let c = -2; c < n + 2; c++) { const t = on(r, c), b = on(r + 1, c); line += t && b ? " " : t ? "▄" : b ? "▀" : "█"; }
+    out += line + "\n";
+  }
+  return out;
+}
 
 const stop = () => { server.kill(); process.exit(0); };
 process.on("SIGINT", stop);

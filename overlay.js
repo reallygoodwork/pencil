@@ -55,7 +55,7 @@
   .pa-meta .pa-tgt{color:#C4C4CC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto;margin-right:6px}
   .pa-meta button{height:32px;padding:0 7px;border-radius:999px;color:#7C7C86;font-weight:500;white-space:nowrap}
   .pa-meta button.on{color:#F4F4F5;font-weight:600}
-  .pa-meta button.x{width:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#9C9CA5;margin-left:2px}
+  .pa-meta button.x{display:inline-flex;align-items:center;gap:4px;padding:0 12px 0 8px;margin-left:4px;color:#F4F4F5;font-weight:600;background:rgba(255,255,255,.1)}
 
   .pa-dot{flex:0 0 auto;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;line-height:1;background:var(--c);color:var(--ink)}
   .pa-dot.l{width:32px;height:32px;font-size:13px}
@@ -196,7 +196,8 @@
   const compose = el("div", { id: "pa-compose", className: "pa-ui" });
   const metaTgt = h("span", { className: "pa-tgt" });
   const chips = INTENTS.map(([v, l]) => h("button", { textContent: l, "data-v": v, onclick: () => setIntent(v) }));
-  const cancelBtn = h("button", { className: "x", "aria-label": "Cancel", html: ICON.x });
+  const cancelBtn = h("button", { className: "x", "aria-label": "Clear the marks", title: "Clear the marks" });
+  cancelBtn.append(h("span", { html: ICON.x }), h("span", { textContent: "Clear" }));
   compose.append(h("div", { className: "pa-meta pa-glass" }, metaTgt, ...chips, cancelBtn));
   let intent = "change";
   const setIntent = (v) => { intent = v; chips.forEach((c) => c.classList.toggle("on", c.dataset.v === v)); };
@@ -261,20 +262,47 @@
     if (!on) { abortTalking(cPill); hide(compose); clearStroke(); }
   };
   setMode(drawMode);
-  btn.addEventListener("click", () => setMode(!drawMode));
+  const coarse = matchMedia("(pointer: coarse)").matches;
+  btn.addEventListener("click", () => {
+    setMode(!drawMode);
+    // Phones: say once how to scroll while the pen is on.
+    if (drawMode && coarse && !stylusSeen) {
+      let seen = false;
+      try { seen = localStorage.getItem("pa-hint") === "1"; localStorage.setItem("pa-hint", "1"); } catch {}
+      if (!seen) say("Draw with one finger · scroll with two", 4000);
+    }
+  });
 
   const ours = (e) => e.target instanceof Element && e.target.closest("[data-pa]");
   const draws = (e) => drawMode && !ours(e) && (e.pointerType === "pen" || e.pointerType === "mouse" || (e.pointerType === "touch" && !stylusSeen));
+  // Two fingers scroll the page while the pen is on: the second finger drops the stroke in progress.
+  const fingers = new Set();
+  let pan = null;
+  const mid = (t) => [(t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2];
+  const dropStroke = () => { if (drawing) { drawing = false; cur = null; redraw(); } };
   document.addEventListener("touchstart", (e) => {
     if (!drawMode || ours(e)) return;
     const stylus = [...e.changedTouches].some((t) => t.touchType === "stylus");
     if (stylus) stylusSeen = true;
+    if (!stylus && e.touches.length >= 2) { dropStroke(); pan = mid(e.touches); }
     if (stylus || !stylusSeen) e.preventDefault();
   }, { passive: false, capture: true });
+  document.addEventListener("touchmove", (e) => {
+    if (!pan || e.touches.length < 2) return;
+    e.preventDefault();
+    const m = mid(e.touches);
+    scrollBy(pan[0] - m[0], pan[1] - m[1]);
+    pan = m;
+  }, { passive: false, capture: true });
+  const endTouch = (e) => { if (e.touches.length < 2) pan = null; };
+  document.addEventListener("touchend", endTouch, true);
+  document.addEventListener("touchcancel", endTouch, true);
 
   let swallowClick = false;
   document.addEventListener("pointerdown", (e) => {
     if (e.pointerType === "pen") stylusSeen = true;
+    if (e.pointerType === "touch") fingers.add(e.pointerId);
+    if (fingers.size > 1 || pan) { dropStroke(); return; }
     if (!draws(e)) return;
     e.preventDefault(); e.stopPropagation();
     clearTimeout(idleT);
@@ -286,10 +314,12 @@
   document.addEventListener("pointermove", (e) => {
     if (!drawing) return;
     e.preventDefault();
+    if (fingers.size > 1) return dropStroke();
     for (const c of e.getCoalescedEvents ? e.getCoalescedEvents() : [e]) cur.pts.push([c.clientX, c.clientY, c.pressure || 0.5]);
     redraw();
   }, true);
   const finish = (e) => {
+    fingers.delete(e.pointerId);
     if (!drawing) return;
     drawing = false; swallowClick = true;
     setTimeout(() => (swallowClick = false), 60);
@@ -681,6 +711,7 @@
     cPill.go.classList.toggle("off", !sketchy);
     setIntent("change");
     place(compose, rect);
+    toast.style.display = "none"; // the card replaces any hint up top
     ta.focus({ preventScroll: true });
   }
   ta.addEventListener("input", () => cPill.go.classList.toggle("off", !ta.value.trim() && !(sketch && (sketch.needsImage || sketch.gestures.some((g) => g.type !== "circle")))));
@@ -696,6 +727,8 @@
     const before = renderEl(target);
     ann.pencil.snapshot = await snapshotOf(target);
     hide(compose); clearStroke();
+    // With a finger, the pen stays on only while marking: turn it off so the page scrolls again.
+    if (inputType === "touch" && !stylusSeen) setMode(false);
     try {
       const s = await ensureSession();
       const a = await api(`/sessions/${s.id}/annotations`, { method: "POST", body: ann });
