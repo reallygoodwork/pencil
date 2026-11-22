@@ -1,0 +1,42 @@
+# Pencil Agent
+
+> Open-source tool from Really Good Work Inc. Circle something on your live website with Apple Pencil (iPad) or a finger (phone), say or type what should change, and Claude Code edits the code on your Mac. The page reloads with the fix. Free, MIT licensed.
+
+## How it works
+
+1. Circle what you want changed. Apple Pencil on an iPad, or a finger on a phone.
+2. Say or type the change, e.g. "Make this our brand orange."
+3. Your Mac gets the note with the element, its text and its source file (about 60 tokens per note).
+4. Claude Code edits the file. The page reloads and the note turns green.
+
+- Finding the element: it asks the browser what sits under the middle of the circle, then steps out to the parent while the circle still covers 70% of it.
+- Reading marks: loose stroke measurements, not picture recognition. Circle, box, arrow (move), X and strike-through (remove), underline (emphasise), handwriting inside a box (label).
+- Voice: keyboard dictation, or whisper.cpp running on the Mac. No paid transcription.
+- Modes: headless (`claude -p`), relay (a live Claude Code session claims notes), and MCP.
+- Format: Agentation Annotation Format Schema (AFS) v1.1.
+
+## Requirements
+
+- A Mac with Node.js 20.6+, Claude Code signed in, and your app's dev server.
+- An iPad or iPhone. Tailscale (free) connects them from any network and gives HTTPS for the mic. Same Wi-Fi works without it.
+
+## Security
+
+- The server binds 127.0.0.1, rejects unknown Host headers, and checks a token and the app's exact origin on every request.
+- The agent may only read, search, edit and write files. No terminal, no internet.
+- Notes, sketches and voice stay on the Mac. Development only; never injected into production builds.
+
+## Try it
+
+```
+git clone https://github.com/reallygoodwork/pencil
+cd pencil
+npm run demo
+```
+
+## Links
+
+- Site: https://pencil.reallygood.work
+- Code: https://github.com/reallygoodwork/pencil
+- License (MIT): https://github.com/reallygoodwork/pencil/blob/main/LICENSE
+- Studio: https://reallygood.work · https://x.com/reallygoodwork

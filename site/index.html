@@ -3,19 +3,222 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pencil Agent by Really Good Work Inc.: mark up your site on an iPad</title>
-<meta name="description" content="Circle it on your iPad. Say what's wrong. Claude Code fixes it on your Mac. Free and open source, from Really Good Work Inc.">
+<title>Pencil Agent: mark up your site on an iPad, Claude Code makes the change</title>
+<meta name="description" content="Circle something on your live site with Apple Pencil or a finger, say what should change, and Claude Code edits the code on your Mac. Free, open source, MIT.">
+<meta name="author" content="Drew Minns, Really Good Work Inc.">
+<meta name="robots" content="index, follow, max-image-preview:large, max-video-preview:-1, max-snippet:-1">
 <link rel="canonical" href="https://pencil.reallygood.work/">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="alternate" type="text/plain" href="/llms.txt" title="LLM summary">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="Pencil Agent">
+<meta property="og:locale" content="en_US">
 <meta property="og:url" content="https://pencil.reallygood.work/">
 <meta property="og:title" content="Pencil Agent: mark up your site on an iPad">
-<meta property="og:description" content="Circle it on your iPad. Say what's wrong. Claude Code fixes it on your Mac.">
-<meta property="og:image" content="https://pencil.reallygood.work/media/ipad-poster.jpg">
-<meta property="og:image:width" content="1180">
-<meta property="og:image:height" content="820">
+<meta property="og:description" content="Circle it on your iPad. Say what's wrong. Claude Code fixes it on your Mac. Free and open source.">
+<meta property="og:image" content="https://pencil.reallygood.work/media/og.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Pencil Agent: mark up your site on an iPad. A coding agent makes the change. Beside it, the demo site on an iPad.">
+<meta property="og:video" content="https://pencil.reallygood.work/media/ipad.mp4">
+<meta property="og:video:secure_url" content="https://pencil.reallygood.work/media/ipad.mp4">
+<meta property="og:video:type" content="video/mp4">
+<meta property="og:video:width" content="1180">
+<meta property="og:video:height" content="820">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@reallygoodwork">
-<meta name="theme-color" content="#000000">
+<meta name="twitter:creator" content="@reallygoodwork">
+<meta name="twitter:title" content="Pencil Agent: mark up your site on an iPad">
+<meta name="twitter:description" content="Circle it on your iPad. Say what's wrong. Claude Code fixes it on your Mac.">
+<meta name="twitter:image" content="https://pencil.reallygood.work/media/og.jpg">
+<meta name="twitter:image:alt" content="Pencil Agent: mark up your site on an iPad. A coding agent makes the change.">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "Organization",
+   "@id": "https://reallygood.work/#org",
+   "name": "Really Good Work Inc.",
+   "url": "https://reallygood.work",
+   "founder": {
+    "@type": "Person",
+    "name": "Drew Minns"
+   },
+   "sameAs": [
+    "https://x.com/reallygoodwork",
+    "https://github.com/reallygoodwork"
+   ]
+  },
+  {
+   "@type": "WebSite",
+   "@id": "https://pencil.reallygood.work/#website",
+   "url": "https://pencil.reallygood.work/",
+   "name": "Pencil Agent",
+   "publisher": {
+    "@id": "https://reallygood.work/#org"
+   },
+   "inLanguage": "en"
+  },
+  {
+   "@type": "SoftwareApplication",
+   "@id": "https://pencil.reallygood.work/#app",
+   "name": "Pencil Agent",
+   "url": "https://pencil.reallygood.work/",
+   "description": "Circle something on your live site with Apple Pencil or a finger, say what should change, and Claude Code edits the code on your Mac. Free, open source, MIT.",
+   "applicationCategory": "DeveloperApplication",
+   "applicationSubCategory": "Visual feedback and code editing",
+   "operatingSystem": "macOS, iPadOS, iOS",
+   "softwareVersion": "0.7.0",
+   "license": "https://opensource.org/licenses/MIT",
+   "isAccessibleForFree": true,
+   "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+   },
+   "downloadUrl": "https://github.com/reallygoodwork/pencil",
+   "softwareRequirements": "Node.js 20.6+, Claude Code",
+   "featureList": [
+    "Circle UI with Apple Pencil or a finger",
+    "Voice or text notes",
+    "Reads arrows, boxes, X, strike-through and underline marks",
+    "Claude Code edits the source on your Mac",
+    "Local server bound to 127.0.0.1 with token and origin checks",
+    "Agentation Annotation Format Schema (AFS) v1.1"
+   ],
+   "screenshot": "https://pencil.reallygood.work/media/ipad-poster.jpg",
+   "image": "https://pencil.reallygood.work/media/og.jpg",
+   "author": {
+    "@id": "https://reallygood.work/#org"
+   },
+   "publisher": {
+    "@id": "https://reallygood.work/#org"
+   },
+   "sameAs": [
+    "https://github.com/reallygoodwork/pencil"
+   ]
+  },
+  {
+   "@type": "SoftwareSourceCode",
+   "name": "pencil",
+   "codeRepository": "https://github.com/reallygoodwork/pencil",
+   "programmingLanguage": "JavaScript",
+   "runtimePlatform": "Node.js",
+   "license": "https://opensource.org/licenses/MIT",
+   "author": {
+    "@id": "https://reallygood.work/#org"
+   },
+   "targetProduct": {
+    "@id": "https://pencil.reallygood.work/#app"
+   }
+  },
+  {
+   "@type": "VideoObject",
+   "name": "Pencil Agent demo on an iPad",
+   "description": "The headline is circled, the note asks for it shorter and punchier, Claude Code works on it, and the headline changes to Keep up.",
+   "thumbnailUrl": "https://pencil.reallygood.work/media/ipad-poster.jpg",
+   "contentUrl": "https://pencil.reallygood.work/media/ipad.mp4",
+   "uploadDate": "2026-11-20",
+   "duration": "PT21S",
+   "width": 1180,
+   "height": 820
+  },
+  {
+   "@type": "FAQPage",
+   "@id": "https://pencil.reallygood.work/#faq",
+   "mainEntity": [
+    {
+     "@type": "Question",
+     "name": "What is Pencil Agent?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "An open-source tool for reviewing websites on an iPad or phone. You circle part of the live page, say or type the change, and Claude Code edits the code on your Mac. The page reloads with the fix."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "What do I need to run it?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "A Mac with Node 20.6 or newer, Claude Code signed in, your app's dev server, and an iPad or iPhone. Tailscale (free) connects the two devices from any network."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "How much does it cost?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Pencil Agent is free and MIT licensed. Claude Code runs with your own Claude plan or API key, the same as at your desk. Voice transcription is free: keyboard dictation or whisper.cpp on your Mac."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "How does it know which element I circled?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "It asks the browser, not the pixels. It finds what sits under the middle of the circle, then steps out to the parent while the circle still covers 70% of it. Circle a button, get the button."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "How does it tell an arrow from a circle?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "It measures each stroke with loose rules instead of recognising pictures. Ends that meet make a loop. A path that turns back from its farthest point is an arrow. Two crossing lines are an X. A flat line through text is a strike, just below it an underline."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Where does my data go?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Notes, sketches and voice stay on your Mac. The only thing that leaves is what Claude Code sends to Anthropic while it works in your project, under your own login, the same as at your desk. Nothing runs until you send a note."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Is it secure?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "The server listens on 127.0.0.1 only, checks a long random token and your app's exact address on every request, and refuses every other site. The agent can read, search and edit files. It has no terminal and no internet."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Why Tailscale?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Your iPad needs to reach your Mac without opening a port to the internet. Tailscale is a private, encrypted network between your own devices, and it gives the Mac a real HTTPS certificate so Safari allows the mic. On trusted home Wi-Fi you can skip it."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Does it work on a phone?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Yes. Turn the pen on, draw with one finger and scroll with two. On an iPad, the Apple Pencil draws and your fingers keep scrolling."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Which frameworks does it support?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Any site your dev server runs: it's one script tag, added in development only. In React apps it also reports the component and source file."
+     }
+    }
+   ]
+  }
+ ]
+}
+</script>
 <style>
 @font-face{font-family:'Paper Mono';src:url('media/PaperMono.woff2') format('woff2');font-weight:100 800;font-style:normal;font-display:swap}
 body{margin:0;background:#000}
@@ -42,6 +245,9 @@ header{display:flex;justify-content:space-between;align-items:baseline;gap:1.5re
 h2{margin:0;font-size:var(--text-body);line-height:1.5;font-weight:600;letter-spacing:0.04em}
 p{margin:1.25rem 0 0;max-width:56ch;text-wrap:pretty}
 h2 + p{margin-top:0.75rem}
+.faq{margin-top:2rem;display:grid;row-gap:1.75rem}
+.faq h3{margin:0;font-size:var(--text-body);line-height:1.5;font-weight:600;letter-spacing:0.04em}
+.faq p{margin:.375rem 0 0;color:var(--color-text-dim);text-wrap:pretty}
 .rows{margin-top:2rem;display:grid;row-gap:1.75rem}
 .row{display:grid;grid-template-columns:minmax(0,13rem) minmax(0,1fr);column-gap:1.5rem}
 .row .k{min-width:0}
@@ -89,7 +295,7 @@ footer .body{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
 <div class="wrap">
 <header>
 <a href="#top">Pencil Agent</a>
-<nav class="nav" aria-label="Main"><a class="n br" href="#how">How</a><a class="n br" href="#marks">Marks</a><a class="n br" href="#server">Server</a><a class="n br" href="#security">Security</a><a class="n br" href="#about">Studio</a><a class="br" href="https://github.com/reallygoodwork/pencil">Code</a></nav>
+<nav class="nav" aria-label="Main"><a class="n br" href="#how">How</a><a class="n br" href="#marks">Marks</a><a class="n br" href="#server">Server</a><a class="n br" href="#security">Security</a><a class="n br" href="#faq">FAQ</a><a class="n br" href="#about">Studio</a><a class="br" href="https://github.com/reallygoodwork/pencil">Code</a></nav>
 </header>
 <section class="sec" id="intro">
 <div class="lab">Pencil Agent<br>A Really Good Work Inc. project</div>
@@ -209,8 +415,15 @@ npm run demo   <i># open localhost:5173, tap the pen</i></pre></figure>
 <p>A Mac with Node 20 and Claude Code. The demo edits a copy of a sample site. The README covers your own project. <a class="br" href="https://github.com/reallygoodwork/pencil">Get the code</a></p>
 </div>
 </section>
+<section class="sec" id="faq">
+<div class="lab">09 Questions</div>
+<div class="body">
+<h2>Short answers.</h2>
+<div class="faq"><div class="qa"><h3>What is Pencil Agent?</h3><p>An open-source tool for reviewing websites on an iPad or phone. You circle part of the live page, say or type the change, and Claude Code edits the code on your Mac. The page reloads with the fix.</p></div><div class="qa"><h3>What do I need to run it?</h3><p>A Mac with Node 20.6 or newer, Claude Code signed in, your app&#x27;s dev server, and an iPad or iPhone. Tailscale (free) connects the two devices from any network.</p></div><div class="qa"><h3>How much does it cost?</h3><p>Pencil Agent is free and MIT licensed. Claude Code runs with your own Claude plan or API key, the same as at your desk. Voice transcription is free: keyboard dictation or whisper.cpp on your Mac.</p></div><div class="qa"><h3>How does it know which element I circled?</h3><p>It asks the browser, not the pixels. It finds what sits under the middle of the circle, then steps out to the parent while the circle still covers 70% of it. Circle a button, get the button.</p></div><div class="qa"><h3>How does it tell an arrow from a circle?</h3><p>It measures each stroke with loose rules instead of recognising pictures. Ends that meet make a loop. A path that turns back from its farthest point is an arrow. Two crossing lines are an X. A flat line through text is a strike, just below it an underline.</p></div><div class="qa"><h3>Where does my data go?</h3><p>Notes, sketches and voice stay on your Mac. The only thing that leaves is what Claude Code sends to Anthropic while it works in your project, under your own login, the same as at your desk. Nothing runs until you send a note.</p></div><div class="qa"><h3>Is it secure?</h3><p>The server listens on 127.0.0.1 only, checks a long random token and your app&#x27;s exact address on every request, and refuses every other site. The agent can read, search and edit files. It has no terminal and no internet.</p></div><div class="qa"><h3>Why Tailscale?</h3><p>Your iPad needs to reach your Mac without opening a port to the internet. Tailscale is a private, encrypted network between your own devices, and it gives the Mac a real HTTPS certificate so Safari allows the mic. On trusted home Wi-Fi you can skip it.</p></div><div class="qa"><h3>Does it work on a phone?</h3><p>Yes. Turn the pen on, draw with one finger and scroll with two. On an iPad, the Apple Pencil draws and your fingers keep scrolling.</p></div><div class="qa"><h3>Which frameworks does it support?</h3><p>Any site your dev server runs: it&#x27;s one script tag, added in development only. In React apps it also reports the component and source file.</p></div></div>
+</div>
+</section>
 <section class="sec" id="about">
-<div class="lab">09 Studio</div>
+<div class="lab">10 Studio</div>
 <div class="body">
 <p class="statement" style="margin:0">Made by Really Good Work Inc.</p>
 <div class="rows"><div class="row"><div class="k">Website</div><div class="v"><span><a class="br" href="https://reallygood.work">reallygood.work</a></span></div></div><div class="row"><div class="k">X</div><div class="v"><span><a class="br" href="https://x.com/reallygoodwork">@reallygoodwork</a></span></div></div><div class="row"><div class="k">Code</div><div class="v"><span><a class="br" href="https://github.com/reallygoodwork/pencil">github.com/reallygoodwork/pencil</a></span></div></div><div class="row"><div class="k">License</div><div class="v"><span>MIT. Use it for anything.</span><span>Just keep the credit.</span><span><a class="br" href="https://github.com/reallygoodwork/pencil/blob/main/LICENSE">Read it</a></span></div></div></div>

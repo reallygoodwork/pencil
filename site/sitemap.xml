@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+  <url>
+    <loc>https://pencil.reallygood.work/</loc>
+    <lastmod>2026-11-21</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://pencil.reallygood.work/media/ipad-poster.jpg</video:thumbnail_loc>
+      <video:title>Pencil Agent demo on an iPad</video:title>
+      <video:description>The headline is circled, the note asks for it shorter and punchier, Claude Code works on it, and the headline changes.</video:description>
+      <video:content_loc>https://pencil.reallygood.work/media/ipad.mp4</video:content_loc>
+      <video:duration>21</video:duration>
+    </video:video>
+  </url>
+  <url>
+    <loc>https://pencil.reallygood.work/llms.txt</loc>
+    <lastmod>2026-11-21</lastmod>
+  </url>
+</urlset>
