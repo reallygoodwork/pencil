@@ -79,5 +79,6 @@ npm run relay             # listen only; a Claude Code session claims notes via 
 
 - Hosted-product whiteboard: https://claude.ai/artifact/4VqF13Pk84k4YcaHCJXR3a
 - Landing page design canvas: https://claude.ai/artifact/XxzXwaDRQZxjGMd2yV7dKs (`site/` is the static export)
+- Site: https://pencil.reallygood.work (Vercel serves `site/`; see `vercel.json`)
 - Repo: https://github.com/reallygoodwork/pencil
 - AFS spec: https://agentation.com/schema

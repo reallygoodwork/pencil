@@ -2,6 +2,8 @@
 
 <p align="center"><b>Circle it on your iPad. Say what's wrong. Claude Code fixes it on your Mac.</b></p>
 
+<p align="center"><a href="https://pencil.reallygood.work">pencil.reallygood.work</a></p>
+
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-black" alt="MIT license">
   <img src="https://img.shields.io/badge/dependencies-0-black" alt="Zero dependencies">
