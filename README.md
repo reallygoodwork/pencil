@@ -1,198 +1,195 @@
-# Pencil Agent
+<h1 align="center">✎ Pencil Agent</h1>
 
-Circle something on your running web app with Apple Pencil (or your finger on a phone), say what should change, and Claude Code edits your project. A numbered marker on the page shows progress live until the change is done.
+<p align="center"><b>Circle it on your iPad. Say what's wrong. Claude Code fixes it on your Mac.</b></p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-black" alt="MIT license">
+  <img src="https://img.shields.io/badge/dependencies-0-black" alt="Zero dependencies">
+  <img src="https://img.shields.io/badge/node-%E2%89%A520.6-black" alt="Node 20.6 or newer">
+  <img src="https://img.shields.io/badge/annotations-AFS%20v1.1-black" alt="AFS v1.1 annotations">
+</p>
+
+<p align="center">
+  <img src="docs/media/demo.gif" width="760" alt="On an iPad, the headline is circled in red. A note asks for it shorter and punchier, a blue marker shows Claude working, and the headline changes to Keep up.">
+</p>
+
+You notice most problems while you're looking at the real thing, usually on a phone or iPad. The fix is small: a colour, a word, some spacing. But making it means opening the laptop, finding the file and losing the thread. So it waits, or it gets lost.
+
+Pencil Agent lets you review like a creative director instead. Walk the site, mark it up, keep going. A coding agent on your Mac makes each change, and the page updates in front of you.
 
 ```
-iPhone / iPad                       Your Mac
-─────────────                       ───────────────────────────────────────────
-your app (dev) + overlay  ──HTTPS──▶  pencil-agent server (localhost:4545)
-  circle + note                         │ waits; spends nothing while idle
-  marker turns ✓   ◀──live updates──    └─▶ claude -p  (edits files in your repo)
-                     (over Tailscale: private to your devices)
+iPad / iPhone                          your Mac
+─────────────                          ─────────────────────────────────────────
+your dev site + overlay   ──HTTPS──▶   pencil server (127.0.0.1:4545)
+  ✎ circle + note                        │  waits, costs nothing while idle
+  ● → ● → ✓  live         ◀─────────     └─▶ Claude Code edits your repo
+                       private, over Tailscale
 ```
-
-- **One small Node file, no dependencies.** It runs on your Mac next to your dev server.
-- **Cheap on tokens.** Claude only runs when you send something, gets a short text brief per circle, and handles circles sent close together in one run.
-- **Private and secure by default.** The server only listens on your Mac, your devices reach it through Tailscale, and every request needs a token. Claude can only read and edit files in your project.
-- **Standard format.** Annotations are stored as [Agentation Annotation Format (AFS) v1.1](https://agentation.com/schema), so other AFS tools can read them.
-
----
 
 ## Try it in 30 seconds
 
-No Tailscale and no setup. On your Mac, with Claude Code installed:
+No Tailscale, no config. On a Mac with Node and [Claude Code](https://claude.com/claude-code):
+
 ```bash
 git clone https://github.com/reallygoodwork/pencil && cd pencil
-npm run demo            # or: npm run demo -- --fake   (scripted agent, no tokens)
+npm run demo              # or: npm run demo -- --fake   (scripted agent, no tokens)
 ```
-Open http://localhost:5173 in a desktop browser, click **✎**, circle something with the mouse, and send a note. The demo edits a scratch copy of a sample site, never your files.
 
-## Requirements
+Open http://localhost:5173, tap the pen, circle something, and send a note. The demo edits a scratch copy of a sample site, never your files.
 
-- A Mac (or Linux machine) with **Node 20.6+**
-- **Claude Code** installed and signed in: running `claude` in your terminal should work
-- **Tailscale** on the Mac and on your iPhone or iPad (free; see [docs/tailscale.md](docs/tailscale.md))
-- Your app's **dev server** running locally (Vite, Next.js, anything)
+## Sketch it, don't spell it
 
-## Quick start (about 10 minutes)
+Draw the way you'd mark up a printout. Pencil Agent reads the shape and turns it into an instruction.
 
-### 1. Get the code
+| You draw | It means |
+|---|---|
+| ◯ &nbsp;a circle | change this |
+| → &nbsp;an arrow from one thing to a spot | move it there, a whole card, not just its heading |
+| □ &nbsp;a box in empty space, with a scribble inside | add something like this, here |
+| ✕ &nbsp;an X, or a line through something | remove it |
+| ＿ &nbsp;an underline | make it stand out |
+| ✎ &nbsp;anything else | a shape to build, read from the picture |
+
+It doesn't try to recognise drawings. It measures each stroke: do the ends meet, do the points hug a box, does the pen turn back at the tip. Loose rules like that hold up in anyone's hand. Before you send, the note tells you how it read you ("Add after Link 'See the paper'"). Claude also gets a picture of the page as outlines with your ink on top, so a misread mark still lands.
+
+<p align="center">
+  <img src="site/media/sketch-compose.jpg" width="49%" alt="The demo page with a box sketched next to the buttons and an arrow from the third card to the first. The note reads: Add after Link 'See the paper'.">
+  <img src="site/media/sketch-seen.png" width="49%" alt="The same area as Claude receives it: grey outlines of the page with the red ink on top.">
+</p>
+<p align="center"><sub>What you draw · what Claude receives</sub></p>
+
+## What it's like to use
+
+- **Pencil draws, fingers scroll.** On an iPad your hand never fights the tool. On a phone, turn the pen on and use a finger.
+- **Pause to finish.** Draw as many marks as you like. Stop for under a second and a small pill opens: type, talk, or just send the sketch.
+- **Keep moving.** A numbered marker sits on what you marked: amber waiting, blue working, purple a question for you, green done. Mark the next thing while Claude works on the last one.
+- **Circle, wait, check, done.** When it's finished, the marker turns to a green check with Claude's one-line answer. Tap it to drag between before and after.
+- **Talk for free.** Use the dictation key on your keyboard, or turn on a mic button that transcribes on your Mac with whisper.cpp. No paid speech service, and the audio never leaves home.
+- **Tidy up.** A tray lists every note. Close, reopen, or delete with five seconds to undo.
+
+## Set it up for real (about 10 minutes)
+
+You need a Mac with **Node 20.6+**, **Claude Code** signed in, your app's **dev server**, and **[Tailscale](https://tailscale.com)** (free) on the Mac and your iPad or iPhone.
+
+**1. Get the code and share your Mac with your devices**
 ```bash
-git clone https://github.com/reallygoodwork/pencil
-cd pencil
+git clone https://github.com/reallygoodwork/pencil && cd pencil
+tailscale serve --bg --https=443  http://localhost:5173   # your app (use your dev port)
+tailscale serve --bg --https=8443 http://127.0.0.1:4545   # pencil
 ```
+First time with Tailscale? [docs/tailscale.md](docs/tailscale.md) walks through it.
 
-### 2. Make your Mac reachable from your device
-Follow **[docs/tailscale.md](docs/tailscale.md)**. The short version, once Tailscale is installed and HTTPS is enabled:
-```bash
-tailscale serve --bg --https=443  http://localhost:5173   # your app's dev server port
-tailscale serve --bg --https=8443 http://127.0.0.1:4545   # pencil agent
-```
-You'll get a name like `https://your-mac.your-tailnet.ts.net`.
-
-### 3. Configure
+**2. Point it at your project**
 ```bash
 cp pencil.env.example pencil.env
 ```
-Edit `pencil.env`:
 ```bash
-APP_ORIGIN=https://your-mac.your-tailnet.ts.net        # your app, as the device sees it
-PUBLIC_URL=https://your-mac.your-tailnet.ts.net:8443   # pencil agent, as the device sees it
-PROJECT_DIR=/Users/you/code/your-app                   # the repo Claude may edit
+APP_ORIGIN=https://your-mac.your-tailnet.ts.net        # your app, as the iPad sees it
+PUBLIC_URL=https://your-mac.your-tailnet.ts.net:8443   # pencil, as the iPad sees it
+PROJECT_DIR=/Users/you/code/your-app                   # the only repo Claude may edit
 ```
 
-### 4. Start the server
+**3. Start it and add the overlay to your app (dev only)**
 ```bash
 npm start
 ```
-Leave it running. It never prints your token; step 5 shows how to get the script tag.
+Vite and Next.js take a few lines: see **[docs/frameworks.md](docs/frameworks.md)**. Anything else: `npm run tag` prints a script tag. No code changes at all: `npm run bookmarklet`.
 
-### 5. Add the overlay to your app
-Pick one:
-- **Script tag (recommended):** run `npm run tag` and paste the output into your app's dev HTML. For Vite and Next.js, use the setup in **[docs/frameworks.md](docs/frameworks.md)**, which reads the token automatically and never ships to production.
-- **Bookmarklet (no code changes):** run `npm run bookmarklet`, save the output as a bookmark on your device, and tap it on any page of your app.
+**4. Open your app on the iPad and draw.** That's it.
 
-### 6. Use it
-On your iPhone or iPad, open `https://your-mac.your-tailnet.ts.net`:
-1. Tap the pen (bottom right). It lights up.
-2. **Circle** the thing you want changed, or sketch it. Pause for under a second.
-3. Pick **Change**, **Fix** or **Ask**, then type or dictate your note.
-4. Tap send.
+## Three ways to run the agent
 
-A numbered marker sits on what you marked. It turns blue while Claude works, then a green check with Claude's answer, and your dev server's hot reload shows the change. Tap it to drag between before and after.
+| Mode | Start with | Who makes the change | Cost while idle |
+|---|---|---|---|
+| **Headless** (default) | `npm start` | A fresh `claude -p` run per batch of notes | nothing |
+| **Relay** | `npm run relay`, then `/pencil-relay` in Claude Code | The session you already have open, with all its context | nothing |
+| **MCP** | `node server.js --mcp` | Your open session, through MCP tools | a little, every few minutes |
 
----
+**Relay** is the one to try if you're mid-build. Install the command once with `npm run install-relay`, then run `/pencil-relay` in a session in your project. It starts one background shell that sleeps until a note lands, wakes the session, makes the change, answers on the note and goes back to sleep. Notes go back to the session that took them, so two sessions in one repo each see only their own threads.
 
-## Sketch what you mean
+## What Claude sees
 
-You don't have to describe everything in words. Draw it like you'd mark up a print, and Claude reads the intent:
+Words, not screenshots. Each note becomes a short brief, about 60 tokens:
 
-| Draw | Pencil Agent reads it as |
-|---|---|
-| ◯ a circle | "this thing" |
-| → an arrow from one thing to a spot | move it there (a card, a section, a button) |
-| □ a box in empty space, with handwriting inside | add something like this here, with that label |
-| ✕ an X, or a line through text | remove it |
-| ＿ an underline | emphasise it |
-| any other doodle | a shape or layout to build, read from the sketch image |
+```
+[ann_c6j7hqC0Cmk] fix: Make this our brand orange
+page: /
+element: a.btn.btn-primary "Shop notebooks"
+source: src/components/PrimaryButton.tsx:12
+classes: btn btn-primary
+image: …/9f2a.png (720×440), pin at (156, 220): crop around that point. Optional.
+seen: …/955c.html (sha256 3b1f0c9a27de): the element's HTML as the user saw it.
+```
 
-Draw several marks in a row, then pause for a moment and the note card opens, listing what it read ("→ Move card 'Fountain-pen safe' before card 'Lay-flat binding'"). Add a note or send the sketch as it is. Claude replies starting with **"Read as…"**, so if it misread you, reply on the note.
+The picture and the snapshot are there if Claude needs them, and cost nothing if it doesn't. Notes sent within two seconds go in one run, so Claude explores your code once. Tip: a short `CLAUDE.md` in your project ("components live in src/components") saves it even more digging.
 
-For anything beyond a plain circle, Claude also gets a small picture: the page as grey outlines with your ink in red. That's how it reads handwriting and rough shapes. Plain circles stay text-only, to keep token use low.
+## Private by design
 
-## Day-to-day use
+This lets a web page ask an agent to edit files on your Mac, so the whole design is about who can reach it.
+
+- **Your Mac only.** The server listens on `127.0.0.1`. Your iPad gets in through Tailscale, a private network only your own devices can join.
+- **A secret token** on every request, stored in `~/.pencil-agent/token`, readable only by you. The server never prints it unless you ask.
+- **Your app only.** Requests must come from your app's exact origin and name an allowed host, so no other website can talk to it through your browser.
+- **A limited agent.** Claude gets file tools only: read, find, search, edit, write. No terminal, no internet, nothing outside your project.
+- **Dev only.** Never ship the overlay to production. The framework setups make sure of it.
+
+Full details: [docs/reference.md](docs/reference.md#security).
+
+## Day-to-day
 
 | You want to… | Do this |
 |---|---|
-| Draw on iPad | Use the Pencil. Fingers keep scrolling and tapping as normal. |
-| Draw on iPhone | Use your finger while ✎ is on. Turn ✎ off to scroll. |
-| Send several changes at once | Circle and send a few in a row. Anything sent within about 2 seconds goes to Claude in one run. |
-| Ask instead of change | Pick **Ask** above the note. Claude answers without editing files, and the answer opens on the note. |
-| Move something | Draw an arrow from it to where it should go. |
-| Add something | Draw a box where it should go and scribble what it is inside. |
-| See what has notes | Annotated elements get an outline and a small numbered marker. The eye in the tray hides them all. |
-| See every note | Tap the tray ("3 notes · 1 working") next to ✎. **Open** and **Done** tabs; tap a note to jump to it. |
-| See what Claude did | Tap the marker to read the thread. Finished notes show a before/after you can drag to compare. |
-| Follow up or correct it | Tap the marker and reply. That reopens the note and Claude picks it up again. |
-| Close one | **Close** on the note or in the tray. It moves to Done with its history, and Claude leaves it alone. |
-| Reopen one | **Reopen** from the Done tab. It goes back to Claude. |
-| Delete one | The bin, then confirm. You get 5 seconds to **Undo**. |
-| Talk instead of type | Use the 🎤 on your keyboard. For a mic button in the note (with a live voice visual) that transcribes on your Mac, see [Voice](docs/reference.md#voice). |
+| Send several changes at once | Mark and send a few in a row. Anything within about 2 seconds goes in one run. |
+| Ask instead of change | Pick **Ask** above the note. Claude answers without editing anything. |
+| Follow up or correct it | Tap the marker and reply. The note reopens and goes back to Claude. |
+| See every note | Tap the tray next to the pen. **Open** and **Done** tabs; tap a note to jump to it. |
+| Hide the markers | The eye in the tray. |
+| Close, reopen, delete | On the note or in the tray. Close keeps the history. Delete gives you 5 seconds to undo. |
 
-**Colours:** amber = waiting, blue = Claude is working, purple = Claude asked you something, green = done, grey = closed. Dashed outline = still open, solid = finished.
-
-**Write notes like you'd brief a developer:** "make this the brand orange and 20% smaller" works better than "fix this". Claude sees the element you circled, its text, classes and (for React) its component and source file.
-
-## Keeping token use low
-
-The server is built to keep token use low:
-- **Idle costs nothing.** No model runs until you send a note.
-- **Short briefs.** Each circle becomes about 50–80 tokens: your note, the page, the element path and text, the source file, and classes. The full captured details (styles, bounding box, attributes) stay on your Mac.
-- **Batching.** Circles sent close together go to one `claude` run, so Claude explores your codebase once.
-- **Smaller model:** set `CLAUDE_MODEL=haiku` or `sonnet` in `pencil.env` for routine tweaks.
-- **Help Claude find things faster:** a short `CLAUDE.md` in your project ("components live in src/components, styles use Tailwind") cuts down the exploring Claude does on each run.
-
-## Optional: let your open Claude Code session do the work (relay)
-
-By default each batch starts a fresh `claude -p` run. If you'd rather the session that built the thing also fixes it, with all its context, use relay mode:
-```bash
-npm run relay            # the server listens, but runs no agent itself
-npm run install-relay    # once: installs the /pencil-relay command into ~/.claude/commands
-```
-Then, in a Claude Code session in your project, run **`/pencil-relay`**. It starts one background shell (`node bin/pencil.js wait`) that sleeps on a long poll until a note lands, so **waiting costs no tokens**. When a note arrives the shell prints the brief and exits, which wakes the session. Claude makes the change, answers on the note with `node bin/pencil.js resolve <id> "…"`, and starts waiting again.
-
-**Notes go back to the session that took them.** Each session gets an id, and when you reply on a note, the reply goes to the session that handled it. Two sessions in one repo each see only their own threads. Add `--match /checkout` to only take notes from pages whose URL contains `/checkout`.
-
-An MCP mode also exists (`node server.js --mcp`), but its `pencil_watch` re-sends your session's context every few minutes while idle. Prefer relay.
+Write notes like you'd brief a developer: "make this the brand orange and 20% smaller" beats "fix this".
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| Error toast `origin not allowed` | `APP_ORIGIN` must exactly match the address bar origin on the device: scheme, host and port, with no trailing slash. |
-| Error toast `bad token` | The tag or bookmarklet has an old token. Run `npm run tag` or `npm run bookmarklet` again. The token lives in `~/.pencil-agent/token`. |
-| No ✎ button appears | Check that `PUBLIC_URL/health` opens on the device. If your app sets a Content Security Policy, allow `PUBLIC_URL` in `script-src` and `connect-src` in dev. |
-| `502` from Tailscale | Is the dev server running? Use the full `http://localhost:PORT` form in `tailscale serve`. See [docs/tailscale.md](docs/tailscale.md#troubleshooting). |
-| Vite says "Blocked request. This host is not allowed" | Add `server.allowedHosts: ['.ts.net']`. See [docs/frameworks.md](docs/frameworks.md#vite). |
+| `origin not allowed` | `APP_ORIGIN` must match the address bar exactly: scheme, host and port, no trailing slash. |
+| `bad token` | The tag or bookmarklet is stale. Run `npm run tag` or `npm run bookmarklet` again. |
+| No pen button | Open `PUBLIC_URL/health` on the device. If your app has a Content Security Policy, allow `PUBLIC_URL` in `script-src` and `connect-src` in dev. |
+| `502` from Tailscale | Is the dev server running? Use the full `http://localhost:PORT` form. See [docs/tailscale.md](docs/tailscale.md#troubleshooting). |
+| Vite blocks the host | Add `server.allowedHosts: ['.ts.net']`. See [docs/frameworks.md](docs/frameworks.md#vite). |
 | The Pencil scrolls instead of drawing | The pen is off. Tap it so it lights up. |
-| Marker turns green but the page doesn't change | Your dev server isn't hot-reloading through Tailscale. See [docs/frameworks.md](docs/frameworks.md) or add `data-reload="true"` to the script tag. |
-| Marker turns purple with "I couldn't finish this" | Claude failed or timed out. Check the server's terminal output, then reply on the note to retry. |
+| Marker goes green, page doesn't change | Hot reload isn't reaching the device. See [docs/frameworks.md](docs/frameworks.md) or add `data-reload="true"` to the script tag. |
+| Marker goes purple: "I couldn't finish this" | Check the server's terminal, then reply on the note to retry. |
 | `claude: not found` | Set `CLAUDE_BIN=/full/path/to/claude` in `pencil.env`. |
-| `Port 4545 is in use` | Another Pencil Agent is running, or set `PORT=` to something else (and update the `tailscale serve` command to match). |
-
-## Security in one paragraph
-
-The server binds to `127.0.0.1`, so only your Mac can reach it directly, and your devices reach it through Tailscale's private network. Every API call needs a random token (stored in `~/.pencil-agent/token`, readable only by you), must come from your app's exact origin, and must name an allowed Host, so a website can't reach it through your browser by pointing its own hostname at your Mac. The relay's agent API only answers on the Mac itself: no Origin, a loopback Host, nothing forwarded. Claude runs with file tools only: **Read, Edit, Write, Glob, Grep**, inside `PROJECT_DIR`, with no shell and no network. Text captured from the page is labelled as data, not instructions. Never add the script tag to production builds. Details are in [docs/reference.md](docs/reference.md#security).
-
-## Repo layout
-
-```
-server.js            the server (no dependencies)
-overlay.js           the browser overlay
-bin/pencil.js        relay client for a Claude Code session (wait, resolve, reply, dismiss, get)
-templates/           the /pencil-relay command, installed with npm run install-relay
-docs/                setup guides + reference; docs/product/ = hosted-product plan
-examples/demo-app/   sample site for the demo
-scripts/             demo runner, video recorder
-site/                landing page (static)
-test/                npm test
-CLAUDE.md            context for Claude Code when working on this repo
-```
+| `Port 4545 is in use` | Another Pencil is running, or set `PORT=` and update `tailscale serve` to match. |
 
 ## Docs
 
-- [docs/tailscale.md](docs/tailscale.md): set up private HTTPS access from your phone or iPad
-- [docs/frameworks.md](docs/frameworks.md): Vite, Next.js, other frameworks, and the bookmarklet
-- [docs/reference.md](docs/reference.md): configuration, AFS data model, HTTP API, MCP tools, voice, security
+- **[docs/tailscale.md](docs/tailscale.md)**: private HTTPS from your phone or iPad, and the same-Wi-Fi option without it
+- **[docs/frameworks.md](docs/frameworks.md)**: Vite, Next.js, everything else, and the bookmarklet
+- **[docs/reference.md](docs/reference.md)**: config, commands, the brief, the AFS data model, HTTP and agent APIs, voice, security
+
+## What's in here
+
+```
+server.js            the server: one file, no dependencies
+overlay.js           the drawing overlay your page loads
+bin/pencil.js        relay client for a Claude Code session
+templates/           the /pencil-relay command
+docs/                setup guides and reference
+examples/demo-app/   the sample site for the demo
+site/                the landing page
+test/                npm test
+```
 
 ## Credits
 
-- Annotation format: [Agentation Annotation Format Schema v1.1](https://agentation.com/schema). Pencil Agent is an independent implementation and contains no Agentation code.
-- Stroke rendering: [perfect-freehand](https://github.com/steveruizok/perfect-freehand) by Steve Ruiz (MIT), vendored in `vendor/`.
-- Made by [Really Good Work Inc.](https://reallygood.work) · [@reallygoodwork](https://x.com/reallygoodwork)
+- Annotations follow the [Agentation Annotation Format Schema v1.1](https://agentation.com/schema). This is an independent implementation with no Agentation code.
+- Ink by [perfect-freehand](https://github.com/steveruizok/perfect-freehand) from Steve Ruiz (MIT), vendored in `vendor/`.
+- Type on the landing page: [Paper Mono](https://github.com/paper-design/paper-mono) (OFL).
 
 ## License
 
-MIT. Use it for anything: personal, client work, commercial. Change it, ship it, sell it. Just keep the credit: the copyright line in [LICENSE](LICENSE) stays in your copy. A shout-out to [@reallygoodwork](https://x.com/reallygoodwork) is appreciated, not required.
+**MIT.** Use it for anything: personal, client work, commercial. Change it, ship it, sell it. Just keep the credit: the copyright line in [LICENSE](LICENSE) stays in your copy. A shout-out to [@reallygoodwork](https://x.com/reallygoodwork) is appreciated, not required.
 
-© 2026 Drew Minns, [Really Good Work Inc.](https://reallygood.work)
+<p align="center">Made by <a href="https://reallygood.work">Really Good Work Inc.</a> · <a href="https://x.com/reallygoodwork">@reallygoodwork</a><br>© 2026 Drew Minns</p>
