@@ -9,6 +9,6 @@ Run a release check for Pencil Agent and report a short pass/fail list with fixe
 3. Search the repo for anything that looks like a real token, a `.ts.net` hostname that isn't a placeholder, or personal paths. None may ship.
 4. Check the security invariants in CLAUDE.md still hold in the code (bind host, token + origin checks, argument-array spawns, `--allowedTools`, `normalizeAnnotation`).
 5. Check that README.md, the docs and site/index.html agree with the code on commands, env vars, MCP tool names and the version in package.json.
-6. List any remaining placeholders: `[LICENSE]`, `[ADD WAITLIST LINK]`.
+6. List any remaining placeholders (anything in square brackets meant to be filled in, like `[EMAIL]`).
 
 Fix what's clearly wrong. Ask before anything that changes behaviour.

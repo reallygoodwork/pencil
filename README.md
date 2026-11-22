@@ -190,3 +190,9 @@ CLAUDE.md            context for Claude Code when working on this repo
 - Annotation format: [Agentation Annotation Format Schema v1.1](https://agentation.com/schema). Pencil Agent is an independent implementation and contains no Agentation code.
 - Stroke rendering: [perfect-freehand](https://github.com/steveruizok/perfect-freehand) by Steve Ruiz (MIT), vendored in `vendor/`.
 - Made by [Really Good Work Inc.](https://reallygood.work) · [@reallygoodwork](https://x.com/reallygoodwork)
+
+## License
+
+MIT. Use it for anything: personal, client work, commercial. Change it, ship it, sell it. Just keep the credit: the copyright line in [LICENSE](LICENSE) stays in your copy. A shout-out to [@reallygoodwork](https://x.com/reallygoodwork) is appreciated, not required.
+
+© 2026 Drew Minns, [Really Good Work Inc.](https://reallygood.work)

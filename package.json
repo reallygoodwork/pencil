@@ -36,5 +36,6 @@
   "bugs": {
     "url": "https://github.com/reallygoodwork/pencil/issues"
   },
-  "author": "Really Good Work Inc. (https://reallygood.work)"
+  "author": "Drew Minns, Really Good Work Inc. (https://reallygood.work)",
+  "license": "MIT"
 }
