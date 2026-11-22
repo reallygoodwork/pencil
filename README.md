@@ -37,6 +37,8 @@ npm run demo              # or: npm run demo -- --fake   (scripted agent, no tok
 
 Open http://localhost:5173, tap the pen, circle something, and send a note. The demo edits a scratch copy of a sample site, never your files.
 
+**On your phone or iPad:** add `--lan` (same Wi-Fi, plain HTTP) or `--tailscale` (HTTPS, mic button works) and open the address it prints.
+
 ## Sketch it, don't spell it
 
 Draw the way you'd mark up a printout. Pencil Agent reads the shape and turns it into an instruction.
