@@ -6,7 +6,7 @@ Circle UI on a phone or iPad (Apple Pencil or finger), leave a note, and Claude 
 
 | Path | What |
 |---|---|
-| `server.js` | The whole server, zero dependencies: AFS store, HTTP API, SSE events, headless worker (`claude -p`), relay mode with a local agent API, optional MCP stdio mode, whisper.cpp transcription |
+| `server.js` | The whole server, zero dependencies: AFS store, HTTP API, SSE events, headless worker (`claude -p` or `codex exec`), relay mode with a local agent API, optional MCP stdio mode, whisper.cpp transcription |
 | `overlay.js` | Browser overlay: drawing, sketch reading, element capture into AFS, the note pill (text, voice with a Web Audio dither), markers on the page, the notes tray, close/reopen/delete with undo, snapshots, before/after compare |
 | `bin/pencil.js` | Relay client for a Claude Code session: `wait` (long poll, zero tokens while idle), `resolve`, `reply`, `dismiss`, `get` |
 | `templates/pencil-relay.md` | The `/pencil-relay` command, installed with `npm run install-relay` |
@@ -25,6 +25,7 @@ Circle UI on a phone or iPad (Apple Pencil or finger), leave a note, and Claude 
 npm test                  # full suite, about 5s, no dependencies
 npm run demo              # http://localhost:5173 with real Claude Code editing a scratch copy
 npm run demo -- --fake    # same, with the scripted fake agent (no tokens)
+npm run demo -- --relay   # opens Claude Code in this terminal to take the notes; add --lan for the QR code
 npm run site              # landing page at http://localhost:8080
 npm start                 # real use: needs pencil.env (copy pencil.env.example)
 npm run relay             # listen only; a Claude Code session claims notes via bin/pencil.js
@@ -41,7 +42,7 @@ npm run relay             # listen only; a Claude Code session claims notes via 
   - The server never prints the token at startup. Only `npm run tag` and `npm run bookmarklet` do, on request.
   - The token goes in a header, never in a URL. The overlay streams SSE with `fetch`, not `EventSource`, for this reason.
   - Subprocesses are spawned with argument arrays, never a shell. Every subprocess has a timeout.
-  - The headless agent gets `--allowedTools Read,Edit,Write,Glob,Grep` only.
+  - The headless agent gets `--allowedTools Read,Edit,Write,Glob,Grep` only. `AGENT=codex` runs `codex exec --sandbox workspace-write` (commands in the project, no network); that's documented as the wider option.
   - The browser can't set `status: resolved`, can't post `role: agent`, and can't pick fields outside AFS (`normalizeAnnotation` rebuilds every field).
   - Prompts label page content as data. Only `comment` and human thread messages are instructions.
 - **AFS v1.1 compliance.** Required fields are `id, comment, elementPath, timestamp, x, y, element`. Status enum: `pending | acknowledged | resolved | dismissed`. Pencil-only data goes under the `pencil` extension key.

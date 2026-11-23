@@ -81,6 +81,8 @@
   .pa-qb{height:40px;padding:0 12px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;color:#9C9CA5;font-size:13.5px;font-weight:500;white-space:nowrap}
   .pa-qb.hi{color:#F4F4F5}
   .pa-qb.danger{background:rgba(240,82,82,.16);color:#FF8A8A}
+  .pa-qb.send{background:#F4F4F5;color:#121214;font-weight:600}
+  #pa-kb{position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;font-size:16px;border:0;padding:0}
 
   #pa-list{position:fixed;right:84px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:2147483647;width:400px;max-height:min(62vh,500px);border-radius:24px;display:none;flex-direction:column;overflow:hidden}
   .pa-lh{display:flex;align-items:center;gap:4px;padding:4px 4px 4px 16px;flex:0 0 auto}
@@ -146,6 +148,7 @@
     pen: svg('<path d="M4 20l4-1 11-11-3-3L5 16l-1 4zM14 6l3 3"/>', 22),
     mic: svg('<rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>', 20),
     send: svg('<path d="M12 19V5M6 11l6-6 6 6"/>', 18, 1.9),
+    plus: svg('<path d="M12 5v14M5 12h14"/>', 18, 1.9),
     x: svg('<path d="M7 7l10 10M17 7L7 17"/>', 16, 1.9),
     check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>', 12, 3),
     eye: svg('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
@@ -196,14 +199,34 @@
   const compose = el("div", { id: "pa-compose", className: "pa-ui" });
   const metaTgt = h("span", { className: "pa-tgt" });
   const chips = INTENTS.map(([v, l]) => h("button", { textContent: l, "data-v": v, onclick: () => setIntent(v) }));
+  // Queue: hold notes on the device and send them together. The choice sticks between visits.
+  let queueMode = false;
+  try { queueMode = localStorage.getItem("pa-queue") === "1"; } catch {}
+  const queueChip = h("button", { textContent: "Queue", title: "Hold notes and send them together", onclick: () => setQueue(!queueMode) });
   const cancelBtn = h("button", { className: "x", "aria-label": "Clear the marks", title: "Clear the marks" });
   cancelBtn.append(h("span", { html: ICON.x }), h("span", { textContent: "Clear" }));
-  compose.append(h("div", { className: "pa-meta pa-glass" }, metaTgt, ...chips, cancelBtn));
+  compose.append(h("div", { className: "pa-meta pa-glass" }, metaTgt, ...chips, queueChip, cancelBtn));
   let intent = "change";
   const setIntent = (v) => { intent = v; chips.forEach((c) => c.classList.toggle("on", c.dataset.v === v)); };
   const cPill = makePill({ placeholder: "Say or type the change", onSend: (t) => sendNote(t) });
   const ta = cPill.ta;
   compose.append(cPill.root);
+  function setQueue(on) {
+    queueMode = on;
+    try { localStorage.setItem("pa-queue", on ? "1" : "0"); } catch {}
+    queueChip.classList.toggle("on", on);
+    queueChip.setAttribute("aria-pressed", String(on));
+    cPill.go.innerHTML = on ? ICON.plus : ICON.send;
+    cPill.go.setAttribute("aria-label", on ? "Add to the queue" : "Send");
+    ta.focus({ preventScroll: true });
+  }
+  // iOS only opens the keyboard when focus happens inside a tap. The note card opens after a pause, so
+  // focus this hidden field as the stroke ends, then hand focus to the note's text box when it opens.
+  const kb = el("input", { id: "pa-kb", className: "pa-ui", type: "text", tabIndex: -1 });
+  kb.setAttribute("aria-hidden", "true");
+  let kbWanted = false;
+  const kbOpen = () => { if (kbWanted && document.activeElement !== ta) kb.focus({ preventScroll: true }); kbWanted = false; };
+  const kbClose = () => { if (document.activeElement === kb || document.activeElement === ta) document.activeElement.blur(); };
 
   // One note: status, thread, reply, close / reopen / delete.
   const detail = el("div", { id: "pa-note", className: "pa-ui pa-glass" });
@@ -259,7 +282,7 @@
     drawMode = on;
     sessionStorage.setItem("pa-draw", on ? "1" : "0");
     btn.classList.toggle("on", on);
-    if (!on) { abortTalking(cPill); hide(compose); clearStroke(); }
+    if (!on) { abortTalking(cPill); hide(compose); clearStroke(); kbClose(); }
   };
   setMode(drawMode);
   const coarse = matchMedia("(pointer: coarse)").matches;
@@ -294,7 +317,7 @@
     scrollBy(pan[0] - m[0], pan[1] - m[1]);
     pan = m;
   }, { passive: false, capture: true });
-  const endTouch = (e) => { if (e.touches.length < 2) pan = null; };
+  const endTouch = (e) => { if (e.touches.length < 2) pan = null; if (e.type === "touchend") kbOpen(); };
   document.addEventListener("touchend", endTouch, true);
   document.addEventListener("touchcancel", endTouch, true);
 
@@ -324,7 +347,7 @@
     drawing = false; swallowClick = true;
     setTimeout(() => (swallowClick = false), 60);
     e.preventDefault(); e.stopPropagation();
-    if (cur.pts.length >= 3) strokes.push(cur);
+    if (cur.pts.length >= 3) { strokes.push(cur); kbWanted = e.pointerType !== "mouse"; }
     cur = null;
     redraw();
     if (!strokes.length) return;
@@ -335,7 +358,7 @@
   document.addEventListener("click", (e) => {
     if ((swallowClick || (drawMode && !stylusSeen)) && !ours(e)) { e.preventDefault(); e.stopPropagation(); }
   }, true);
-  addEventListener("scroll", () => { if (!drawing && compose.style.display !== "block") clearStroke(); }, { passive: true });
+  addEventListener("scroll", () => { if (!drawing && compose.style.display !== "block") { clearStroke(); kbClose(); } }, { passive: true });
 
   function analyze() {
     sketch = interpret(strokes);
@@ -710,12 +733,13 @@
     cPill.reset(sketchy ? "Add a note, or just send the sketch" : "Say or type the change");
     cPill.go.classList.toggle("off", !sketchy);
     setIntent("change");
+    setQueue(queueMode);
     place(compose, rect);
     toast.style.display = "none"; // the card replaces any hint up top
     ta.focus({ preventScroll: true });
   }
   ta.addEventListener("input", () => cPill.go.classList.toggle("off", !ta.value.trim() && !(sketch && (sketch.needsImage || sketch.gestures.some((g) => g.type !== "circle")))));
-  const cancelCompose = () => { abortTalking(cPill); hide(compose); clearStroke(); };
+  const cancelCompose = () => { abortTalking(cPill); hide(compose); clearStroke(); kbClose(); };
   cancelBtn.onclick = cancelCompose;
   cPill.onEscape = cancelCompose;
   async function sendNote(text) {
@@ -724,9 +748,10 @@
     const note = text || (sketch.needsImage || sketch.gestures.some((g) => g.type !== "circle") ? "Sketch: " + sketch.gestures.map(describe).join("; ") : "");
     if (!note) return ta.focus();
     const ann = buildAnnotation(note, target, rect, sketch);
+    if (queueMode) ann.pencil.held = true;
     const before = renderEl(target);
     ann.pencil.snapshot = await snapshotOf(target);
-    hide(compose); clearStroke();
+    hide(compose); clearStroke(); kbClose();
     // With a finger, the pen stays on only while marking: turn it off so the page scrolls again.
     if (inputType === "touch" && !stylusSeen) setMode(false);
     try {
@@ -734,7 +759,8 @@
       const a = await api(`/sessions/${s.id}/annotations`, { method: "POST", body: ann });
       if (before) try { sessionStorage.setItem("pa-before-" + a.id, before); } catch {}
       upsert(a, true);
-      say("Sent · waiting for Claude", 2500, a);
+      if (queueMode) { const q = queued().length; say(`Queued · ${q} to send`, 2500, a); }
+      else say("Sent · waiting for Claude", 2500, a);
     } catch (e) {
       if (e.status === 404) { session = null; say("Session expired, send again", 4000); }
       else say("Couldn't send: " + e.message, 6000);
@@ -743,6 +769,7 @@
 
   // ---------- notes: status, markers on the page, the tray ----------
   const ST = {
+    queued: { c: "#C4C4CC", ink: "#121214", label: "Queued" },
     open: { c: "#F5A524", ink: "#2A1A00", label: "Waiting for Claude" },
     working: { c: "#4C6FFF", ink: "#FFFFFF", label: "Claude is on it" },
     question: { c: "#A35BFF", ink: "#FFFFFF", label: "Claude has a question" },
@@ -750,7 +777,7 @@
     closed: { c: "#6E6E78", ink: "#F4F4F5", label: "Closed" },
   };
   const awaiting = (a) => a.status === "acknowledged" && a.thread?.at(-1)?.role === "agent";
-  const stateOf = (a) => a.status === "pending" ? "open" : a.status === "resolved" ? "done" : a.status === "dismissed" ? "closed" : awaiting(a) ? "question" : "working";
+  const stateOf = (a) => a.status === "pending" && a.pencil?.held ? "queued" : a.status === "pending" ? "open" : a.status === "resolved" ? "done" : a.status === "dismissed" ? "closed" : awaiting(a) ? "question" : "working";
   const isOpen = (a) => !["done", "closed"].includes(stateOf(a));
   const KIND = { button: "Button", a: "Link", img: "Image", svg: "Icon", input: "Field", textarea: "Field", select: "Menu", p: "Text", span: "Text", li: "Item", ul: "List", ol: "List", nav: "Nav", header: "Header", footer: "Footer", section: "Section", article: "Card", form: "Form", label: "Label", video: "Video" };
   const targetOf = (a) => {
@@ -858,9 +885,11 @@
     const count = (s) => all.filter((n) => stateOf(n.a) === s).length;
     const open = all.filter((n) => isOpen(n.a)).length;
     const sub = count("question") ? `· ${count("question")} question${count("question") > 1 ? "s" : ""}` : count("working") ? `· ${count("working")} working` : open ? `· ${open} waiting` : "· all done";
-    const dots = h("span", { className: "pa-dots", "aria-hidden": "true" }, ...["open", "working", "question", "done"].filter(count).map((s) => h("i", { style: `--c:${ST[s].c}` })));
-    tray.replaceChildren(dots, h("span", { textContent: `${all.length} note${all.length > 1 ? "s" : ""}` }), h("span", { className: "pa-mut", textContent: sub }),
-      eyeBtn(), h("button", { className: "pa-ib hi", "aria-label": "Show all notes", html: ICON.up, onclick: () => { listOpen = true; renderAll(); } }));
+    const dots = h("span", { className: "pa-dots", "aria-hidden": "true" }, ...["queued", "open", "working", "question", "done"].filter(count).map((s) => h("i", { style: `--c:${ST[s].c}` })));
+    const q = count("queued");
+    const sendBtn = q && h("button", { className: "pa-qb send", textContent: `Send ${q}`, "aria-label": `Send ${q} queued note${q > 1 ? "s" : ""}`, onclick: sendQueue });
+    tray.replaceChildren(dots, h("span", { textContent: `${all.length} note${all.length > 1 ? "s" : ""}` }), h("span", { className: "pa-mut", textContent: q ? `· ${q} queued` : sub }),
+      sendBtn, eyeBtn(), h("button", { className: "pa-ib hi", "aria-label": "Show all notes", html: ICON.up, onclick: () => { listOpen = true; renderAll(); } }));
     if (!listOpen) { tray.style.display = "flex"; hide(list); return; }
     hide(tray);
     const done = all.filter((n) => !isOpen(n.a)), opened = all.filter((n) => isOpen(n.a));
@@ -868,7 +897,7 @@
     const tab = (k, label) => h("button", { className: "pa-tab" + (listTab === k ? " on" : ""), "aria-pressed": String(listTab === k), textContent: label, onclick: () => { listTab = k; confirmId = null; renderAll(); } });
     list.replaceChildren(
       h("div", { className: "pa-lh" }, h("b", { textContent: "Notes" }), tab("open", `Open ${opened.length}`), h("span", { className: "pa-mut", textContent: "·", "aria-hidden": "true" }), tab("done", `Done ${done.length}`),
-        h("span", { style: "flex:1" }), eyeBtn(), h("button", { className: "pa-ib hi", "aria-label": "Collapse notes", html: ICON.down, onclick: () => { listOpen = false; confirmId = null; renderAll(); } })),
+        h("span", { style: "flex:1" }), count("queued") && h("button", { className: "pa-qb send", textContent: `Send ${count("queued")}`, onclick: sendQueue }), eyeBtn(), h("button", { className: "pa-ib hi", "aria-label": "Collapse notes", html: ICON.down, onclick: () => { listOpen = false; confirmId = null; renderAll(); } })),
       h("div", { className: "pa-rows" }, rows.length ? rows.map((n) => noteRow(n.a)) : h("div", { className: "pa-empty", textContent: listTab === "open" ? "Nothing open. Circle something to add a note." : "Nothing finished yet." })));
     list.style.display = "flex";
   }
@@ -887,6 +916,14 @@
       h("div", { className: "pa-rt", role: "button", tabindex: "0", onclick: () => focusNote(a.id), onkeydown: (e) => e.key === "Enter" && focusNote(a.id) },
         h("span", { textContent: a.comment.replace(/^Sketch: /, "") }), h("span", { textContent: `${targetOf(a)} · ${ST[s].label}` })),
       ...acts);
+  }
+  const queued = () => visible().filter((n) => stateOf(n.a) === "queued");
+  async function sendQueue() {
+    try {
+      const s = await ensureSession();
+      const { sent } = await api(`/sessions/${s.id}/send`, { method: "POST", body: {} });
+      say(`Sent ${sent} note${sent === 1 ? "" : "s"} · waiting for Claude`, 2500);
+    } catch (e) { say("Couldn't send: " + e.message, 6000); }
   }
   function renderAll() {
     renderMarkers();

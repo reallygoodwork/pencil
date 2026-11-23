@@ -18,8 +18,10 @@ Set these in `pencil.env` (loaded with `node --env-file=pencil.env`) or as envir
 | `APP_ORIGIN` | **required** | Your app's origin as the device sees it, e.g. `https://your-mac.tailnet.ts.net`. Several are allowed, comma-separated (e.g. a Wi-Fi IP and a `.local` name). |
 | `PUBLIC_URL` | `http://HOST:PORT` | Pencil Agent's address as the device sees it. Used for the tag and bookmarklet. |
 | `PROJECT_DIR` | current directory | The repo Claude may edit |
-| `CLAUDE_MODEL` | Claude Code's default | e.g. `haiku` or `sonnet` |
-| `CLAUDE_BIN` | `claude` | Full path, if it isn't on your `PATH` |
+| `AGENT` | `claude` | Headless mode's agent: `claude` or `codex` |
+| `AGENT_MODEL` | the agent's default | e.g. `haiku` or `sonnet`. `CLAUDE_MODEL` still works. |
+| `AGENT_MODEL_SKETCH` | `AGENT_MODEL` | Model for notes with arrows, boxes or crosses. Pair a fast model for circles with a stronger one here. |
+| `AGENT_BIN` | the `AGENT` name | Full path, if it isn't on your `PATH`. `CLAUDE_BIN` still works. |
 | `PORT` | `4545` | |
 | `HOST` | `127.0.0.1` | Keep this with Tailscale. Use `0.0.0.0` only for the same-Wi-Fi setup. |
 | `TOKEN` | generated | Normally read from `~/.pencil-agent/token` (created on first run, permissions 0600). Delete the file to rotate it. |
@@ -46,7 +48,7 @@ node bin/pencil.js get     <id>                             # full AFS JSON
 
 ## What Claude receives
 
-In the default mode, each batch becomes one `claude -p` run with tools limited to `Read,Edit,Write,Glob,Grep` in `PROJECT_DIR`. The prompt is a short brief per annotation:
+In the default mode, each batch becomes one `claude -p` run with tools limited to `Read,Edit,Write,Glob,Grep` in `PROJECT_DIR` (or one `codex exec` run with `AGENT=codex`). A batch goes out once no new note has landed for 0.4 seconds, or after 2 seconds at most. The server log shows how long each note took. The prompt is a short brief per annotation:
 
 ```
 [ann_c6j7hqC0Cmk] change: make it blue
@@ -105,10 +107,11 @@ Every request must carry an allowed `Host` (loopback, the `PUBLIC_URL` or `APP_O
 |---|---|---|
 | `POST` | `/sessions` | `{url}` → session |
 | `GET` | `/sessions`, `/sessions/:id` | A session includes its annotations |
-| `POST` | `/sessions/:id/annotations` | AFS annotation → stored annotation |
+| `POST` | `/sessions/:id/annotations` | AFS annotation → stored annotation. `pencil.held: true` queues it: no agent takes it until the queue is sent. |
+| `POST` | `/sessions/:id/send` | Sends the session's queued notes → `{sent}` |
 | `GET` `PATCH` `DELETE` | `/annotations/:id` | PATCH accepts `comment`, `intent`, `severity`, `status: dismissed\|pending` |
 | `POST` | `/annotations/:id/thread` | `{content}`; always stored as `role: "human"` |
-| `GET` | `/pending`, `/sessions/:id/pending` | |
+| `GET` | `/pending`, `/sessions/:id/pending` | Queued notes aren't listed until they're sent |
 | `GET` | `/events`, `/sessions/:id/events` | SSE stream: `{type, timestamp, sessionId, sequence, payload}`; resume with `Last-Event-ID` |
 | `GET` | `/health`, `/status`, `/config` | |
 | `POST` | `/transcribe` | Audio body → `{text}` |
@@ -155,7 +158,7 @@ Add `WHISPER_MODEL=/Users/you/models/ggml-base.en.bin` to `pencil.env` and resta
 | Host | Every request must name an allowed host. This blocks DNS rebinding, where a website points its own hostname at `127.0.0.1` and talks to the server through your browser. |
 | Agent API | The relay's claim and answer routes only answer requests made on the Mac itself, never from a page or through Tailscale, and still need the token. |
 | Input | Annotations are rebuilt field by field: types checked, enums validated, strings capped. Bodies are capped at 900 KB to fit one sketch image and one HTML snapshot (64 KB) (audio at 10 MB). The browser can't mark items resolved or post as the agent. |
-| Agent | `claude -p` gets file tools only (`Read,Edit,Write,Glob,Grep`) in `PROJECT_DIR`, with no shell and no network. Prompts label page content as data, not instructions. In MCP mode, your own Claude Code permission settings apply. |
+| Agent | `claude -p` gets file tools only (`Read,Edit,Write,Glob,Grep`) in `PROJECT_DIR`, with no shell and no network. With `AGENT=codex`, `codex exec` runs in its `workspace-write` sandbox: it can edit `PROJECT_DIR` and run commands there, with no network. That's a wider door than Claude's file tools, so choose it knowingly. Prompts label page content as data, not instructions. In MCP mode, your own Claude Code permission settings apply. |
 | Snapshots | The marked element's HTML, capped at 64 KB, saved 0600 next to the sketches. It's data for the agent, labelled as such in the brief. |
 | Sketches | Accepted only as PNG data URLs. The bytes are checked and capped at 512 KB, then saved with permissions 0600 to a private temp folder (0700) that is deleted on exit. In headless mode Claude gets read access to that folder through `--add-dir`, nothing else. |
 | Processes | `claude`, `ffmpeg` and `whisper-cli` run with argument arrays and never through a shell. Audio goes to a private temp directory that is deleted after each use. Every subprocess has a timeout. |

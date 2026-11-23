@@ -1,7 +1,8 @@
 #!/bin/sh
-# Stand-in for `claude -p` used by tests and demo recordings. Makes the edit the
+# Stand-in for `claude -p` (and `codex exec`) used by tests and demo recordings. Makes the edit the
 # demo notes ask for, then prints one "<id>: summary" line per annotation, like Claude.
-PROMPT="$2"
+[ -n "$FAKE_CLAUDE_ARGS" ] && printf '%s\n' "$@" > "$FAKE_CLAUDE_ARGS"
+if [ "$1" = "exec" ]; then for a; do PROMPT="$a"; done; else PROMPT="$2"; fi
 [ -n "$FAKE_CLAUDE_LOG" ] && printf '%s' "$PROMPT" > "$FAKE_CLAUDE_LOG"
 sleep "${FAKE_CLAUDE_DELAY:-2}"
 if echo "$PROMPT" | grep -qi "orange"; then

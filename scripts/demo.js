@@ -2,6 +2,9 @@
 // Try Pencil Agent in 30 seconds, no Tailscale needed:
 //   npm run demo            → real Claude Code edits a scratch copy of the demo app
 //   npm run demo -- --fake  → a scripted stand-in agent (no tokens), for recording
+//   npm run demo -- --relay → opens Claude Code in this terminal, listening for notes (fastest: no startup per note)
+// The real agent defaults to Haiku for plain circles and Sonnet for sketches. Override with AGENT_MODEL and
+// AGENT_MODEL_SKETCH, or use Codex with AGENT=codex. The --relay session uses Sonnet (or AGENT_MODEL).
 // Open http://localhost:5173 in a desktop browser, tap ✎, circle, send.
 //
 // On your phone or iPad:
@@ -22,6 +25,7 @@ const APP_PORT = Number(process.env.DEMO_PORT || 5173);
 const PENCIL_PORT = Number(process.env.PORT || 4545);
 const LAN = process.argv.includes("--lan");
 const TS = process.argv.includes("--tailscale");
+const RELAY = process.argv.includes("--relay");
 
 // Where the phone reaches the demo app and Pencil Agent.
 function lanIp() {
@@ -66,8 +70,11 @@ if (LAN) {
   appOrigin = `https://${name}`; publicUrl = `https://${name}:8443`;
 }
 
-// Work on a scratch copy so the repo's demo app never changes.
-const work = fs.mkdtempSync(path.join(os.tmpdir(), "pencil-demo-"));
+// Work on a scratch copy so the repo's demo app never changes. Same folder every run, reset to the original,
+// so Claude Code only asks "Do you trust this folder?" once.
+const work = path.join(fs.realpathSync(os.tmpdir()), "pencil-demo");
+fs.rmSync(work, { recursive: true, force: true });
+fs.mkdirSync(work);
 fs.cpSync(path.join(ROOT, "examples/demo-app"), work, { recursive: true });
 
 const env = {
@@ -77,9 +84,17 @@ const env = {
   ...hostEnv,
   PORT: String(PENCIL_PORT),
   PROJECT_DIR: work,
-  ...(FAKE ? { CLAUDE_BIN: path.join(ROOT, "test/fixtures/fake-claude.sh") } : {}),
+  ...(FAKE ? { AGENT_BIN: path.join(ROOT, "test/fixtures/fake-claude.sh"), AGENT: "claude" } : {}),
 };
-const server = spawn(process.execPath, [path.join(ROOT, "server.js")], { env, stdio: ["ignore", "ignore", "inherit"] });
+// Fast by default: a small model for plain circles, a stronger one when there are arrows and boxes to read.
+if (!FAKE && (env.AGENT || "claude") === "claude") {
+  env.AGENT_MODEL ||= env.CLAUDE_MODEL || "haiku";
+  env.AGENT_MODEL_SKETCH ||= "sonnet";
+}
+// In relay mode Claude Code takes over this terminal, so the server logs to a file instead.
+const logFile = path.join(os.tmpdir(), `pencil-demo-${process.pid}.log`);
+const serverErr = RELAY ? fs.openSync(logFile, "w") : "inherit";
+const server = spawn(process.execPath, [path.join(ROOT, "server.js"), ...(RELAY ? ["--relay"] : [])], { env, stdio: ["ignore", "ignore", serverErr] });
 
 const token = () => (process.env.TOKEN || fs.readFileSync(path.join(os.homedir(), ".pencil-agent/token"), "utf8")).trim();
 const types = { ".html": "text/html", ".css": "text/css", ".woff2": "font/woff2", ".js": "text/javascript" };
@@ -98,7 +113,7 @@ http.createServer((req, res) => {
   res.writeHead(200, { "Content-Type": types[path.extname(file)] || "application/octet-stream", "Cache-Control": "no-store" });
   res.end(body);
 }).listen(APP_PORT, bind, () => {
-  const who = FAKE ? "fake agent" : "real Claude Code";
+  const who = RELAY ? "your Claude Code session" : FAKE ? "fake agent" : env.AGENT === "codex" ? "real Codex" : "real Claude Code";
   if (TS) {
     console.log(`\nRun these once (they keep running in the background until you turn them off):\n`);
     console.log(`  tailscale serve --bg --https=443  http://localhost:${APP_PORT}`);
@@ -115,7 +130,32 @@ http.createServer((req, res) => {
   } else {
     console.log(`\nDemo app:  http://localhost:${APP_PORT}   (${who} editing ${work})\n`);
   }
+  if (RELAY) startRelaySession();
 });
+
+// Relay mode: open Claude Code here, in the scratch copy, already listening. Enter first, so the QR code
+// stays on screen while you scan it.
+function startRelaySession() {
+  console.log(`Server log:  tail -f ${logFile}`);
+  console.log(`\nPress Enter to open Claude Code. It listens for notes and edits the scratch copy. Quit it to stop the demo.`);
+  process.stdin.once("data", () => {
+    process.stdin.pause();
+    const pencil = path.join(ROOT, "bin/pencil.js");
+    const installed = fs.existsSync(path.join(os.homedir(), ".claude/commands/pencil-relay.md"));
+    // Without the installed command, pass the same instructions as the first message.
+    const prompt = installed ? "/pencil-relay" : fs.readFileSync(path.join(ROOT, "templates/pencil-relay.md"), "utf8")
+      .replace(/^---[\s\S]*?---\n/, "").replaceAll("{{PENCIL}}", pencil).replaceAll(" $ARGUMENTS", "");
+    const bin = process.env.AGENT_BIN || process.env.CLAUDE_BIN || "claude";
+    // One session takes both circles and sketches, so it gets one model: Sonnet is quick and still reads sketches well.
+    const model = process.env.AGENT_MODEL || process.env.CLAUDE_MODEL || "sonnet";
+    // "--allowedTools=": the flag takes a list, so a separate value would swallow the prompt after it.
+    const claude = spawn(bin, [prompt, "--model", model, `--allowedTools=Bash(node ${pencil}:*)`], { cwd: work, stdio: "inherit", env: process.env });
+    process.removeAllListeners("SIGINT");
+    process.on("SIGINT", () => {}); // Ctrl+C belongs to Claude Code now
+    claude.on("error", () => { console.error(`Couldn't start ${bin}. Is Claude Code installed?`); stop(); });
+    claude.on("exit", stop);
+  });
+}
 
 if (FAKE) {
   console.log("Fake agent: it doesn't read your note. It only makes two scripted edits:");

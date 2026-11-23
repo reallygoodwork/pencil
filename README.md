@@ -34,7 +34,8 @@ No Tailscale, no config. On a Mac with Node and [Claude Code](https://claude.com
 
 ```bash
 git clone https://github.com/reallygoodwork/pencil && cd pencil
-npm run demo              # real Claude Code edits a scratch copy
+npm run demo              # real Claude Code edits a scratch copy (Haiku for circles, Sonnet for sketches)
+npm run demo -- --relay   # opens Claude Code right here, listening: fastest, no startup per note
 npm run demo -- --fake    # scripted agent, no tokens: knows two notes only (it prints them)
 ```
 
@@ -66,7 +67,8 @@ It doesn't try to recognise drawings. It measures each stroke: do the ends meet,
 ## What it's like to use
 
 - **Pencil draws, fingers scroll.** On an iPad your hand never fights the tool. On a phone, turn the pen on, draw with one finger and scroll with two. The pen turns itself off after you send, and **Clear** wipes a stray mark.
-- **Pause to finish.** Draw as many marks as you like. Stop for under a second and a small pill opens: type, talk, or just send the sketch.
+- **Pause to finish.** Draw as many marks as you like. Stop for under a second and a small pill opens with the keyboard up: type, talk, or just send the sketch.
+- **Queue them up.** Turn on **Queue** above the note and each note waits on the page instead of going straight to Claude. Tap **Send** in the tray to send them all at once.
 - **Keep moving.** A numbered marker sits on what you marked: amber waiting, blue working, purple a question for you, green done. Mark the next thing while Claude works on the last one.
 - **Circle, wait, check, done.** When it's finished, the marker turns to a green check with Claude's one-line answer. Tap it to drag between before and after.
 - **Talk for free.** Use the dictation key on your keyboard, or turn on a mic button that transcribes on your Mac with whisper.cpp. No paid speech service, and the audio never leaves home.
@@ -106,11 +108,13 @@ Vite and Next.js take a few lines: see **[docs/frameworks.md](docs/frameworks.md
 
 | Mode | Start with | Who makes the change | Cost while idle |
 |---|---|---|---|
-| **Headless** (default) | `npm start` | A fresh `claude -p` run per batch of notes | nothing |
+| **Headless** (default) | `npm start` | A fresh `claude -p` run per batch of notes, or `codex exec` with `AGENT=codex` | nothing |
 | **Relay** | `npm run relay`, then `/pencil-relay` in Claude Code | The session you already have open, with all its context | nothing |
 | **MCP** | `node server.js --mcp` | Your open session, through MCP tools | a little, every few minutes |
 
-**Relay** is the one to try if you're mid-build. Install the command once with `npm run install-relay`, then run `/pencil-relay` in a session in your project. It starts one background shell that sleeps until a note lands, wakes the session, makes the change, answers on the note and goes back to sleep. Notes go back to the session that took them, so two sessions in one repo each see only their own threads.
+**Relay** is the one to try if you're mid-build. Install the command once with `npm run install-relay`, then run `/pencil-relay` in a session in your project. It starts one background shell that sleeps until a note lands, wakes the session, makes the change, answers on the note and goes back to sleep. Notes go back to the session that took them, so two sessions in one repo each see only their own threads. It's also the fastest mode: the session is already warm, so there's no startup per note. Any agent that can run a shell command can be the relay. `templates/pencil-relay.md` is the whole recipe.
+
+**Speed.** In headless mode, set `AGENT_MODEL=haiku` and `AGENT_MODEL_SKETCH=sonnet`. A plain circle with a note is a precise, small job, and a fast model handles it well. Sketches with arrows and boxes go to the stronger model.
 
 ## What Claude sees
 
@@ -144,7 +148,7 @@ Full details: [docs/reference.md](docs/reference.md#security).
 
 | You want to… | Do this |
 |---|---|
-| Send several changes at once | Mark and send a few in a row. Anything within about 2 seconds goes in one run. |
+| Send several changes at once | Turn on **Queue** above the note, mark everything, then tap **Send** in the tray. Or send a few quickly in a row: notes less than half a second apart go in one run. |
 | Ask instead of change | Pick **Ask** above the note. Claude answers without editing anything. |
 | Follow up or correct it | Tap the marker and reply. The note reopens and goes back to Claude. |
 | See every note | Tap the tray next to the pen. **Open** and **Done** tabs; tap a note to jump to it. |

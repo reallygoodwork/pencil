@@ -25,7 +25,10 @@
 //   TOKEN          shared secret (default: generated once, stored in ~/.pencil-agent/token)
 //   PROJECT_DIR    headless mode: repo the agent edits (default: current directory)
 //   ALLOWED_HOSTS  extra Host names to accept, comma-separated (loopback and the PUBLIC_URL/APP_ORIGIN hosts always are)
-//   CLAUDE_BIN     default "claude";  CLAUDE_MODEL optional, e.g. "sonnet" or "haiku"
+//   AGENT          headless mode: "claude" (default) or "codex"
+//   AGENT_BIN      default: the AGENT name (CLAUDE_BIN still works)
+//   AGENT_MODEL    optional, e.g. "haiku" (CLAUDE_MODEL still works);  AGENT_MODEL_SKETCH  model for notes with
+//                  arrows, boxes or crosses (default: AGENT_MODEL). A small model is fast for plain circles.
 //   WHISPER_MODEL  path to a whisper.cpp model (ggml-*.bin); enables the mic button
 //   WHISPER_BIN    default "whisper-cli";  WHISPER_LANG default "en";  FFMPEG_BIN default "ffmpeg"
 
@@ -55,7 +58,11 @@ const HOST = env.HOST || "127.0.0.1";
 const PORT = Number(env.PORT || 4545);
 const PUBLIC_URL = (env.PUBLIC_URL || `http://${HOST === "0.0.0.0" ? "<your-mac-ip>" : HOST}:${PORT}`).replace(/\/$/, "");
 const PROJECT_DIR = expand(env.PROJECT_DIR) || process.cwd();
-const CLAUDE_BIN = env.CLAUDE_BIN || "claude";
+const AGENT = (env.AGENT || "claude").toLowerCase();
+if (!["claude", "codex"].includes(AGENT)) { process.stderr.write(`AGENT must be "claude" or "codex", not "${env.AGENT}".\n`); process.exit(1); }
+const AGENT_BIN = env.AGENT_BIN || env.CLAUDE_BIN || AGENT;
+const AGENT_MODEL = env.AGENT_MODEL || env.CLAUDE_MODEL || "";
+const AGENT_MODEL_SKETCH = env.AGENT_MODEL_SKETCH || AGENT_MODEL;
 const WHISPER_MODEL = expand(env.WHISPER_MODEL);
 const WHISPER_BIN = env.WHISPER_BIN || "whisper-cli";
 const WHISPER_LANG = env.WHISPER_LANG || "en";
@@ -168,6 +175,7 @@ function normalizeAnnotation(b, sessionId) {
     pin: p.sketch && Array.isArray(p.pin) ? [Math.round(finite(p.pin[0])), Math.round(finite(p.pin[1]))] : undefined,
     snapshot: p.snapshot ? saveSnapshot(p.snapshot) : undefined,
     input: ["pen", "touch", "mouse"].includes(p.input) ? p.input : undefined,
+    held: p.held === true || undefined, // queued on the device: no agent takes it until the user sends the queue
   };
   const id = typeof b.id === "string" && /^ann_[\w-]{4,64}$/.test(b.id) && !annotations.has(b.id) ? b.id : rid("ann");
   return { id, ...out, status: "pending", thread: [], sessionId, createdAt: iso(), updatedAt: iso() };
@@ -179,7 +187,7 @@ function addAnnotation(sessionId, body) {
   const a = normalizeAnnotation(body, sessionId);
   annotations.set(a.id, a);
   touch(s);
-  log(`#${a.pencil.number} new: "${a.comment.slice(0, 80)}" on ${a.elementPath.slice(-60)}`);
+  log(`#${a.pencil.number} ${a.pencil.held ? "queued" : "new"}: "${a.comment.slice(0, 80)}" on ${a.elementPath.slice(-60)}`);
   emit("annotation.created", sessionId, a);
   return a;
 }
@@ -198,14 +206,24 @@ function addMessage(a, role, content) {
   return m;
 }
 function touch(s) { s.updatedAt = iso(); }
-const pending = (sessionId) => [...annotations.values()].filter((a) => a.status === "pending" && (!sessionId || a.sessionId === sessionId));
+// Queued (held) notes aren't pending for any agent until the user sends the queue.
+const pending = (sessionId) => [...annotations.values()].filter((a) => a.status === "pending" && !a.pencil?.held && (!sessionId || a.sessionId === sessionId));
+function releaseQueue(sessionId) {
+  getSession(sessionId);
+  const held = [...annotations.values()].filter((a) => a.sessionId === sessionId && a.pencil?.held);
+  for (const a of held) { delete a.pencil.held; a.updatedAt = iso(); emit("annotation.updated", sessionId, a); }
+  if (held.length) log(`sent the queue: ${held.map((a) => "#" + a.pencil.number).join(" ")}`);
+  return held.length;
+}
 const ownerLive = (o) => o && (o === "headless" ? MODE === "headless" : now() - (relays.get(o) || 0) < RELAY_STALE_MS);
 // Who may take a pending note: its owner if that session is still around, otherwise anyone (optionally only
 // notes whose page URL contains `match`, so two sessions in one repo can split pages).
 const claimable = (relay, match) => pending().filter((a) =>
   (!ownerLive(a.pencil?.owner) || a.pencil.owner === relay) && (!match || (a.url || "").includes(match)));
+const claimedAt = new Map(); // id → when an agent took it, for the timing in the log
+const took = (a) => claimedAt.has(a.id) ? `${((now() - claimedAt.get(a.id)) / 1000).toFixed(1)}s  ` : "";
 function claim(list, relay) {
-  for (const a of list) { a.pencil.owner = relay; setStatus(a, "acknowledged"); }
+  for (const a of list) { a.pencil.owner = relay; claimedAt.set(a.id, now()); setStatus(a, "acknowledged"); }
   return list;
 }
 
@@ -260,6 +278,7 @@ const routes = [
   ["GET", /^\/sessions\/([\w-]+)\/pending$/, (req, [id]) => (getSession(id), [200, pending(id)])],
   ["GET", /^\/pending$/, () => [200, pending()]],
   ["POST", /^\/sessions\/([\w-]+)\/annotations$/, async (req, [id]) => [201, addAnnotation(id, await body(req))]],
+  ["POST", /^\/sessions\/([\w-]+)\/send$/, (req, [id]) => [200, { sent: releaseQueue(id) }]],
   ["GET", /^\/annotations\/([\w-]+)$/, (req, [id]) => [200, getAnnotation(id)]],
   ["PATCH", /^\/annotations\/([\w-]+)$/, async (req, [id]) => {
     // Humans may edit their own note and labels, dismiss, or reopen.
@@ -305,7 +324,7 @@ const agentRoutes = [
       relays.set(relay, now());
       if (!claimable(relay, match).length) await sleep(250);
     }
-    if (claimable(relay, match).length) await sleep(BATCH_MS); // let a few quick circles arrive together
+    if (claimable(relay, match).length) await settle(() => claimable(relay, match).length); // let a few quick circles arrive together
     const list = claim(claimable(relay, match).slice(0, 5), relay);
     relays.set(relay, now());
     if (list.length) log(`→ ${relay}: ${list.map((a) => "#" + a.pencil.number).join(" ")}`);
@@ -315,7 +334,7 @@ const agentRoutes = [
     const a = getAnnotation(id), b = await body(req);
     const text = str(b.message ?? b.summary ?? b.reason, 2000).trim();
     if (!text) throw httpErr(400, "message is required");
-    if (verb === "resolve") { addMessage(a, "agent", text); setStatus(a, "resolved", "agent"); log(`#${a.pencil.number} ✓ ${text.slice(0, 100)}`); }
+    if (verb === "resolve") { addMessage(a, "agent", text); setStatus(a, "resolved", "agent"); log(`#${a.pencil.number} ✓ ${took(a)}${text.slice(0, 100)}`); }
     if (verb === "reply") { addMessage(a, "agent", text); emit("annotation.updated", a.sessionId, a); }
     if (verb === "dismiss") { addMessage(a, "agent", `Dismissed: ${text}`); setStatus(a, "dismissed", "agent"); }
     return [200, { ok: true }];
@@ -442,31 +461,54 @@ function markLine(g) {
 }
 
 // ---------------------------------------------------------------------------
-// Headless worker: listens, batches whatever is pending, runs one `claude -p` per batch.
+// Headless worker: listens, batches whatever is pending, runs one agent (`claude -p` or `codex exec`) per batch.
 // Zero tokens while idle.
 // ---------------------------------------------------------------------------
-const CLAUDE_MODEL = env.CLAUDE_MODEL || "";
-const BATCH_MS = 2000;
+// Batching: go once no new note has landed for QUIET_MS, and never wait longer than BATCH_MS.
+// One note goes out after QUIET_MS; a burst of quick circles still goes out together.
+const QUIET_MS = 400, BATCH_MS = 2000;
+async function settle(count) {
+  const start = now();
+  for (let n = count(); now() - start < BATCH_MS;) {
+    await sleep(QUIET_MS);
+    const m = count();
+    if (m === n) return;
+    n = m;
+  }
+}
+// Arguments for one headless run. Claude gets file tools only. Codex runs in its workspace-write sandbox:
+// it can edit the project and run commands there, with no network.
+function agentArgs(batch) {
+  const prompt = headlessPrompt(batch);
+  const sketched = batch.some(isSketched);
+  const model = sketched ? AGENT_MODEL_SKETCH : AGENT_MODEL;
+  if (AGENT === "codex") {
+    const images = batch.filter(isSketched).map((a) => a.pencil?.sketch).filter(Boolean);
+    return { model, args: ["exec", "--sandbox", "workspace-write", "--skip-git-repo-check", "--color", "never",
+      ...(model ? ["-m", model] : []), ...images.flatMap((i) => ["-i", i]), "--", prompt] };
+  }
+  return { model, args: ["-p", prompt, "--allowedTools", ALLOWED_TOOLS, "--output-format", "text",
+    "--add-dir", SKETCH_DIR, // let Read open sketch images and snapshots
+    ...(model ? ["--model", model] : [])] };
+}
 async function headlessWorker() {
   for (;;) {
     await waitForPending(null, 60_000);
     if (!claimable("headless").length) { await sleep(500); continue; }
-    await sleep(BATCH_MS); // let a few quick circles arrive together
+    await settle(() => claimable("headless").length); // let a few quick circles arrive together
     const batch = claim(claimable("headless").slice(0, 5), "headless");
     if (!batch.length) continue;
-    log(`→ agent: ${batch.map((a) => "#" + a.pencil.number).join(" ")}`);
-    const args = ["-p", headlessPrompt(batch), "--allowedTools", ALLOWED_TOOLS, "--output-format", "text"];
-    args.push("--add-dir", SKETCH_DIR); // let Read open sketch images and snapshots
-    if (CLAUDE_MODEL) args.push("--model", CLAUDE_MODEL);
+    const { model, args } = agentArgs(batch);
+    log(`→ ${AGENT}${model ? ` (${model})` : ""}: ${batch.map((a) => "#" + a.pencil.number).join(" ")}`);
     try {
-      const out = await run(CLAUDE_BIN, args, AGENT_TIMEOUT_MS, PROJECT_DIR);
+      const out = await run(AGENT_BIN, args, AGENT_TIMEOUT_MS, PROJECT_DIR);
       const summaries = Object.fromEntries([...out.matchAll(/^\s*\[?(ann_[\w-]+)\]?:\s*(.+)$/gm)].map((m) => [m[1], m[2].trim()]));
       const fallback = out.trim().split("\n").filter(Boolean).pop() || "Done.";
       for (const a of batch) {
         const s = (summaries[a.id] || fallback).slice(0, 500);
         addMessage(a, "agent", s);
         setStatus(a, "resolved", "agent");
-        log(`#${a.pencil.number} ✓ ${s.slice(0, 100)}`);
+        log(`#${a.pencil.number} ✓ ${took(a)}${s.slice(0, 100)}`);
       }
     } catch (e) {
       for (const a of batch) {
@@ -518,7 +560,7 @@ async function callTool(name, args = {}) {
   switch (name) {
     case "pencil_watch": {
       await waitForPending(null, clamp(args.timeoutSeconds ?? 300, 1, 600) * 1000);
-      if (pending().length) await sleep(BATCH_MS);
+      if (pending().length) await settle(() => pending().length);
       const list = claim(claimable("mcp"), "mcp");
       relays.set("mcp", now());
       if (!list.length) return "none";
@@ -668,7 +710,7 @@ server.on("error", (e) => {
 });
 server.listen(PORT, HOST, () => {
   httpUp = true;
-  log(`v${VERSION} (AFS ${AFS_VERSION}) ${MODE} mode on http://${HOST}:${PORT}  ·  app ${APP_ORIGINS.join(", ")}${MODE === "headless" ? `  ·  project ${PROJECT_DIR}` : ""}  ·  voice ${WHISPER_MODEL ? "on" : "off"}`);
+  log(`v${VERSION} (AFS ${AFS_VERSION}) ${MODE} mode on http://${HOST}:${PORT}  ·  app ${APP_ORIGINS.join(", ")}${MODE === "headless" ? `  ·  agent ${AGENT}${AGENT_MODEL ? ` ${AGENT_MODEL}` : ""}${AGENT_MODEL_SKETCH !== AGENT_MODEL ? ` (sketches: ${AGENT_MODEL_SKETCH})` : ""}  ·  project ${PROJECT_DIR}` : ""}  ·  voice ${WHISPER_MODEL ? "on" : "off"}`);
   if (MODE === "relay") log(`Relay mode: no agent runs here. In a Claude Code session in your project, run /pencil-relay (or: node ${path.join(ROOT, "bin/pencil.js")} wait).`);
   if (MODE === "headless") {
     // The token is never printed at startup, so screen shares, recordings and pasted logs can't leak it.
