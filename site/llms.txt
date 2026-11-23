@@ -16,7 +16,10 @@ Most visual problems show up when you look at the real site on an iPad or phone.
 - Finding the element: it asks the browser what's under your circle and picks the element the circle mostly covers (it steps out to the parent while the circle still covers 70% of it).
 - Marks: circle (this one), arrow (move it here), box (add something here; write inside it to say what), X or strike-through (remove it), underline (make it stand out). Strokes are measured, not matched to pictures. It shows how it read your marks before you send.
 - Voice: keyboard dictation, or whisper.cpp running on the Mac. No paid transcription.
-- Modes: headless (`claude -p`), relay (a live Claude Code session claims notes), and MCP.
+- Queue: turn on Queue in the note and notes wait on the page; tap Send in the tray to send them together.
+- Before and after: a done note shows the agent's answer; drag between before and after, or reply to send it back.
+- Modes: headless (the server runs `claude -p` per batch, or `codex exec` with AGENT=codex; AGENT_MODEL and AGENT_MODEL_SKETCH pick a fast model for circles and a stronger one for sketches), relay (a Claude Code session you have open claims notes: warm, faster, free while idle; replies route back to the same session; any agent that can run a shell command can relay), and MCP.
+- Each note's brief also points to a picture of what was marked and the element's HTML as the user saw it (about 100 tokens in all).
 - Format: Agentation Annotation Format Schema (AFS) v1.1.
 
 ## Requirements
@@ -27,7 +30,7 @@ Most visual problems show up when you look at the real site on an iPad or phone.
 ## Security
 
 - The server binds 127.0.0.1, rejects unknown Host headers, and checks a token and the app's exact origin on every request.
-- The agent may only read, search, edit and write files. No terminal, no internet.
+- Headless Claude may only read, search, edit and write files: no terminal, no internet. Codex (AGENT=codex) runs in its workspace-write sandbox: it can also run commands in the project, still no network. In relay mode, the session's own Claude Code permissions apply.
 - Notes, sketches and voice stay on the Mac. Development only; never injected into production builds.
 
 ## Try it
@@ -35,7 +38,9 @@ Most visual problems show up when you look at the real site on an iPad or phone.
 ```
 git clone https://github.com/reallygoodwork/pencil
 cd pencil
-npm run demo
+npm run demo                   # localhost:5173
+npm run demo -- --lan          # QR code for your phone or iPad
+npm run demo -- --relay --lan  # Claude Code opens in the same terminal and takes the notes
 ```
 
 ## Links

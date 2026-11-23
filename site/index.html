@@ -90,6 +90,9 @@
     "Voice or text notes",
     "Reads arrows, boxes, X, strike-through and underline marks",
     "Claude Code edits the source on your Mac",
+    "Relay mode: a Claude Code session you have open takes the notes",
+    "Queue notes and send them together",
+    "Codex as an alternative agent",
     "Local server bound to 127.0.0.1 with token and origin checks",
     "Agentation Annotation Format Schema (AFS) v1.1"
    ],
@@ -138,6 +141,8 @@
     {"@type": "Question", "name": "What do I need?", "acceptedAnswer": {"@type": "Answer", "text": "A Mac with Node 20.6 or newer, Claude Code signed in, your app’s dev server, and an iPad or iPhone. Tailscale, which is free, connects them from any network."}},
     {"@type": "Question", "name": "What does it cost?", "acceptedAnswer": {"@type": "Answer", "text": "Nothing. It’s MIT licensed. Claude Code uses your own Claude plan, the same as at your desk. Voice is free too: the keyboard’s dictation key, or whisper.cpp on your Mac."}},
     {"@type": "Question", "name": "How does it know what I circled?", "acceptedAnswer": {"@type": "Answer", "text": "It asks the browser what’s under your circle and picks the element the circle mostly covers. Circle a button, you get the button. Circle a card, you get the card."}},
+    {"@type": "Question", "name": "Can I send several notes at once?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Turn on Queue in the note, mark everything you want, then tap Send in the tray. They go to the agent together."}},
+    {"@type": "Question", "name": "Does it only work with Claude?", "acceptedAnswer": {"@type": "Answer", "text": "Claude Code is the default. Set AGENT=codex and the server runs Codex instead. In relay mode, any agent that can run a shell command can take the notes."}},
     {"@type": "Question", "name": "Where does my stuff go?", "acceptedAnswer": {"@type": "Answer", "text": "Your notes, sketches and voice stay on your Mac. Claude Code talks to Anthropic while it works, under your login, like it always does."}},
     {"@type": "Question", "name": "Why Tailscale?", "acceptedAnswer": {"@type": "Answer", "text": "It connects your iPad to your Mac without opening anything to the internet. It also gives the Mac the HTTPS certificate Safari needs before it’ll use the mic."}},
     {"@type": "Question", "name": "Does it work on a phone?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Turn the pen on, draw with one finger and scroll with two. On an iPad, the Pencil draws and your fingers scroll."}},
@@ -253,6 +258,8 @@ footer .body{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
 <ol class="steps"><li><span>01</span><span>Circle the thing. Apple Pencil on an iPad, or a finger on a phone.</span></li><li><span>02</span><span>Say what you want, or type it. “Make this our brand orange.”</span></li><li><span>03</span><span>Your Mac gets the note, with the element and the file it lives in.</span></li><li><span>04</span><span>Claude Code makes the change. The page reloads and the note turns green.</span></li></ol>
 <figure class="plate"><div class="pl-h"><span class="chip">Fig. 01</span><span class="t">Demo · iPad</span></div><video class="media" src="media/ipad.mp4" poster="media/ipad-poster.jpg" autoplay muted loop playsinline aria-label="Screen recording on an iPad: the headline is circled, the note asks for it shorter and punchier, Claude works on it, and the headline changes to Keep up."></video><figcaption class="cap">Circle the headline, ask for it shorter, watch it change.</figcaption></figure>
 <p>You don’t have to wait. Mark the next thing while Claude works on the last one. Every note stays on the page, so you can see what’s waiting, what’s done, and what Claude has a question about.</p>
+<p>Or hold them. Turn on Queue in the note and each one waits on the page instead of going straight to Claude. When you’ve marked everything, tap Send and they all go at once.</p>
+<p>When a note is done, its marker shows Claude’s answer. Tap it and drag between before and after. If it’s not right, reply on the note and it goes back.</p>
 </div>
 </section>
 <section class="sec" id="marks">
@@ -285,13 +292,17 @@ footer .body{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
 <div class="lab">04 On your Mac</div>
 <div class="body">
 <h2>A small server does the handoff.</h2>
-<p>It’s one Node file with no dependencies. It passes your notes to Claude Code, which works in your project the same way it does when you’re at your desk. This is everything Claude gets for one note:</p>
+<p>It’s one Node file with no dependencies. It holds your notes and hands them to an agent, which works in your project the same way it does when you’re at your desk. There are two ways to run it.</p>
+<div class="rows"><div class="row"><div class="k">On its own</div><div class="v"><span>The server starts Claude Code for each batch of notes. Nothing to keep open. Each run starts fresh, which costs a few seconds. You can give plain circles a small, fast model and sketches a stronger one.</span></div></div><div class="row"><div class="k">Relay</div><div class="v"><span>A Claude Code session you already have open listens for notes. It’s already running and already knows your project, so changes land faster. It costs nothing while it waits, and when you reply to a note, the reply goes back to the same session.</span></div></div><div class="row"><div class="k">Other agents</div><div class="v"><span>Claude Code is the default. The server can run Codex instead, and any agent that can run a shell command can be the relay.</span></div></div></div>
+<p>This is everything the agent gets for one note:</p>
 <figure class="plate"><div class="pl-h"><span class="chip">Code 01</span><span class="t">One note</span></div><pre class="code">[ann_c6j7hqC0Cmk] fix: Make this our brand orange
 page: /
-element: a.btn.btn-primary "Shop notebooks"
+element: main &gt; a.btn.btn-primary "Shop notebooks"
 source: src/components/PrimaryButton.tsx:12
-classes: btn btn-primary</pre></figure>
-<p>About 60&nbsp;tokens. Nothing runs until you send.</p>
+classes: btn btn-primary
+image: /tmp/pencil-sketches-…/9f2a….png (720×440), pin at (156, 220): crop around that point. Optional: open it only if the text isn't enough.
+seen: /tmp/pencil-sketches-…/955c….html (sha256 3b1f0c9a27de): the element's HTML as the user saw it. If the source has moved on, change what they saw.</pre></figure>
+<p>About 100&nbsp;tokens. The last two lines point to a picture of what you marked and the element’s HTML as you saw it. The agent only opens them if it needs to, and it changes the version you were looking at. Nothing runs until you send.</p>
 </div>
 </section>
 <section class="sec" id="security">
@@ -299,7 +310,7 @@ classes: btn btn-primary</pre></figure>
 <div class="body">
 <h2>Only you can reach it.</h2>
 <p>A web page that can ask an agent to edit your code needs to be locked down. So it is.</p>
-<div class="rows"><div class="row"><div class="k">Mac only</div><div class="v"><span>The server only listens on your Mac. Other machines can’t connect.</span></div></div><div class="row"><div class="k">Tailscale</div><div class="v"><span>Your iPad reaches the Mac over a private network of your own devices.</span></div></div><div class="row"><div class="k">Token</div><div class="v"><span>Every request carries a long random key that only you have.</span></div></div><div class="row"><div class="k">Your app only</div><div class="v"><span>It answers your app and refuses every other site.</span></div></div><div class="row"><div class="k">Limited agent</div><div class="v"><span>Claude can read and edit files. No terminal. No internet.</span></div></div></div>
+<div class="rows"><div class="row"><div class="k">Mac only</div><div class="v"><span>The server only listens on your Mac. Other machines can’t connect.</span></div></div><div class="row"><div class="k">Tailscale</div><div class="v"><span>Your iPad reaches the Mac over a private network of your own devices.</span></div></div><div class="row"><div class="k">Token</div><div class="v"><span>Every request carries a long random key that only you have.</span></div></div><div class="row"><div class="k">Your app only</div><div class="v"><span>It answers your app and refuses every other site.</span></div></div><div class="row"><div class="k">Limited agent</div><div class="v"><span>When the server runs Claude, it can read and edit files. No terminal. No internet.</span><span>Codex, if you pick it, can also run commands in your project. Still no internet.</span><span>In relay mode, your own Claude Code settings apply.</span></div></div></div>
 <p>No Tailscale? On Wi-Fi you trust, run it with <code>HOST=0.0.0.0</code> and your Mac’s local address. You lose the mic, and it only works at home.</p>
 </div>
 </section>
@@ -309,15 +320,17 @@ classes: btn btn-primary</pre></figure>
 <h2>Run the demo.</h2>
 <figure class="plate"><div class="pl-h"><span class="chip">Code 02</span><span class="t">Terminal</span></div><pre class="code">git clone https://github.com/reallygoodwork/pencil
 cd pencil
-npm run demo   <i># open localhost:5173, tap the pen</i></pre></figure>
-<p>You need a Mac with Node 20 and Claude Code. The demo edits a copy of a sample site, so nothing of yours is touched. The README covers your own project. <a class="br" href="https://github.com/reallygoodwork/pencil">Get the code</a></p>
+npm run demo                   <i># open localhost:5173, tap the pen</i>
+npm run demo -- --lan          <i># scan the QR code on your phone or iPad</i>
+npm run demo -- --relay --lan  <i># Claude Code opens here and takes the notes</i></pre></figure>
+<p>You need a Mac with Node 20 and Claude Code. The demo edits a copy of a sample site, so nothing of yours is touched. With <code>--relay</code>, press Enter and Claude Code opens in the same terminal, already listening. Quit it to stop the demo. The README covers your own project. <a class="br" href="https://github.com/reallygoodwork/pencil">Get the code</a></p>
 </div>
 </section>
 <section class="sec" id="faq">
 <div class="lab">07 Questions</div>
 <div class="body">
 <h2>Short answers.</h2>
-<div class="faq"><div class="qa"><h3>What is Pencil Agent?</h3><p>An experiment, and an open-source tool. You circle part of a live site on an iPad or phone, say what should change, and Claude Code edits the code on your Mac.</p></div><div class="qa"><h3>What do I need?</h3><p>A Mac with Node 20.6 or newer, Claude Code signed in, your app’s dev server, and an iPad or iPhone. Tailscale, which is free, connects them from any network.</p></div><div class="qa"><h3>What does it cost?</h3><p>Nothing. It’s MIT licensed. Claude Code uses your own Claude plan, the same as at your desk. Voice is free too: the keyboard’s dictation key, or whisper.cpp on your Mac.</p></div><div class="qa"><h3>How does it know what I circled?</h3><p>It asks the browser what’s under your circle and picks the element the circle mostly covers. Circle a button, you get the button. Circle a card, you get the card.</p></div><div class="qa"><h3>Where does my stuff go?</h3><p>Your notes, sketches and voice stay on your Mac. Claude Code talks to Anthropic while it works, under your login, like it always does.</p></div><div class="qa"><h3>Why Tailscale?</h3><p>It connects your iPad to your Mac without opening anything to the internet. It also gives the Mac the HTTPS certificate Safari needs before it’ll use the mic.</p></div><div class="qa"><h3>Does it work on a phone?</h3><p>Yes. Turn the pen on, draw with one finger and scroll with two. On an iPad, the Pencil draws and your fingers scroll.</p></div><div class="qa"><h3>Which frameworks does it work with?</h3><p>Anything your dev server runs. It’s one script tag, added in development only. In React it also finds the component and the source file.</p></div></div>
+<div class="faq"><div class="qa"><h3>What is Pencil Agent?</h3><p>An experiment, and an open-source tool. You circle part of a live site on an iPad or phone, say what should change, and Claude Code edits the code on your Mac.</p></div><div class="qa"><h3>What do I need?</h3><p>A Mac with Node 20.6 or newer, Claude Code signed in, your app’s dev server, and an iPad or iPhone. Tailscale, which is free, connects them from any network.</p></div><div class="qa"><h3>What does it cost?</h3><p>Nothing. It’s MIT licensed. Claude Code uses your own Claude plan, the same as at your desk. Voice is free too: the keyboard’s dictation key, or whisper.cpp on your Mac.</p></div><div class="qa"><h3>How does it know what I circled?</h3><p>It asks the browser what’s under your circle and picks the element the circle mostly covers. Circle a button, you get the button. Circle a card, you get the card.</p></div><div class="qa"><h3>Can I send several notes at once?</h3><p>Yes. Turn on Queue in the note, mark everything you want, then tap Send in the tray. They go to the agent together.</p></div><div class="qa"><h3>Does it only work with Claude?</h3><p>Claude Code is the default. Set AGENT=codex and the server runs Codex instead. In relay mode, any agent that can run a shell command can take the notes.</p></div><div class="qa"><h3>Where does my stuff go?</h3><p>Your notes, sketches and voice stay on your Mac. Claude Code talks to Anthropic while it works, under your login, like it always does.</p></div><div class="qa"><h3>Why Tailscale?</h3><p>It connects your iPad to your Mac without opening anything to the internet. It also gives the Mac the HTTPS certificate Safari needs before it’ll use the mic.</p></div><div class="qa"><h3>Does it work on a phone?</h3><p>Yes. Turn the pen on, draw with one finger and scroll with two. On an iPad, the Pencil draws and your fingers scroll.</p></div><div class="qa"><h3>Which frameworks does it work with?</h3><p>Anything your dev server runs. It’s one script tag, added in development only. In React it also finds the component and the source file.</p></div></div>
 </div>
 </section>
 <section class="sec" id="about">

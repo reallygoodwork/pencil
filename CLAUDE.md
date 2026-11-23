@@ -74,7 +74,6 @@ npm run relay             # listen only; a Claude Code session claims notes via 
   - Untested on real devices: a real Pencil, the Next.js snippet, and the relay with a live Claude Code session.
   - Sketch recognition is heuristic and only tested with synthetic strokes. Tune `classify()` thresholds against real Pencil input.
   - Before/after renders with inlined computed styles: web fonts and images don't carry over.
-  - `site/` doesn't mention relay mode, snapshots or before/after yet: run /sync-site.
 - **Next:** see `docs/product/hosted-plan.md` (QR pairing, end-to-end encryption) and its "Decide first" list.
 
 ## Links
