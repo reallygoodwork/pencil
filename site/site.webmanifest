@@ -1,7 +1,7 @@
 {
   "name": "Pencil Agent",
   "short_name": "Pencil",
-  "description": "Mark up your site on an iPad. Claude Code makes the change.",
+  "description": "Draw on your site, say what you want, and Claude Code makes the change.",
   "start_url": "/",
   "display": "browser",
   "background_color": "#000000",
