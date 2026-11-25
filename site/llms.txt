@@ -8,10 +8,12 @@ Most visual problems show up when you look at the real site on an iPad or phone.
 
 ## How it works
 
-1. Circle the thing. Apple Pencil on an iPad, or a finger on a phone.
-2. Say what you want, or type it, e.g. "Make this our brand orange."
-3. Your Mac gets the note, with the element and the file it lives in (about 60 tokens per note).
-4. Claude Code makes the change. The page reloads and the note turns green.
+1. Tap the pen button in the corner. Then circle the thing, with an Apple Pencil or a finger.
+2. Stop drawing for a second. A note opens with the keyboard up. Type or dictate what you want, e.g. "Make this our brand orange."
+3. Send. Your Mac gets the note, with the element and the file it lives in. The pen turns off so you can scroll again.
+4. Claude Code makes the change. The page reloads and the marker turns green.
+
+- Markers: each note stays on the page as a numbered marker. Amber is waiting, blue is working, purple is a question for you (tap to answer), green is done (tap to see what changed).
 
 - Finding the element: it asks the browser what's under your circle and picks the element the circle mostly covers (it steps out to the parent while the circle still covers 70% of it).
 - Marks: circle (this one), arrow (move it here), box (add something here; write inside it to say what), X or strike-through (remove it), underline (make it stand out). Strokes are measured, not matched to pictures. It shows how it read your marks before you send.
@@ -42,6 +44,23 @@ npm run demo                   # localhost:5173
 npm run demo -- --lan          # QR code for your phone or iPad
 npm run demo -- --relay --lan  # Claude Code opens in the same terminal and takes the notes
 ```
+
+## Set it up on your own site (about 10 minutes)
+
+1. Install Tailscale on the Mac and the iPad. Share two ports: your app's dev server and Pencil.
+2. Copy pencil.env.example to pencil.env and set APP_ORIGIN (your app), PUBLIC_URL (Pencil) and PROJECT_DIR (the one folder Claude may edit).
+3. Run `npm start`.
+4. Add the overlay to your app in development only. Vite and Next.js take a few lines; anything else uses `npm run tag` (script tag) or `npm run bookmarklet`.
+5. Open your app on the iPad and draw.
+
+```
+tailscale serve --bg --https=443  http://localhost:5173   # your app
+tailscale serve --bg --https=8443 http://127.0.0.1:4545   # pencil
+cp pencil.env.example pencil.env
+npm start
+```
+
+Already have Claude Code open in the project? Run `npm run relay`, then `/pencil-relay` in that session.
 
 ## Links
 
